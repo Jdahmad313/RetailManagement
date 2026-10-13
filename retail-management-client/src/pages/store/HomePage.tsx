@@ -46,8 +46,8 @@ export const HomePage: React.FC = () => {
               <Link to="/catalog" className="btn btn-primary" style={{ backgroundColor: '#ffffff', color: '#1e3a8a', padding: '0.75rem 1.75rem' }}>
                 <ShoppingBag size={18} /> Shop Catalog
               </Link>
-              <Link to="/admin/pos" className="btn btn-secondary" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.3)', padding: '0.75rem 1.75rem' }}>
-                Launch POS Terminal <ArrowRight size={18} />
+              <Link to="/catalog" className="btn btn-secondary" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.3)', padding: '0.75rem 1.75rem' }}>
+                Explore Categories <ArrowRight size={18} />
               </Link>
             </div>
           </div>

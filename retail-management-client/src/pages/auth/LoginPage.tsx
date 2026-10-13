@@ -18,13 +18,15 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     setErrorMsg(null);
     try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectUrl = searchParams.get('redirect');
       const loggedUser = await login(email.trim(), password);
       if (loggedUser.roles.includes('Admin') || loggedUser.roles.includes('Manager')) {
-        navigate('/admin');
+        navigate(redirectUrl && redirectUrl.startsWith('/admin') ? redirectUrl : '/admin');
       } else if (loggedUser.roles.includes('Cashier')) {
         navigate('/admin/pos');
       } else {
-        navigate('/');
+        navigate(redirectUrl || '/');
       }
     } catch (err: any) {
       setErrorMsg(err.response?.data?.message || 'Invalid email or password.');
@@ -113,7 +115,10 @@ export const LoginPage: React.FC = () => {
 
         <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8125rem', color: '#64748b' }}>
           Don't have an account?{' '}
-          <Link to="/register" style={{ color: '#2563eb', fontWeight: 600 }}>
+          <Link
+            to={new URLSearchParams(window.location.search).get('redirect') ? `/register?redirect=${encodeURIComponent(new URLSearchParams(window.location.search).get('redirect')!)}` : '/register'}
+            style={{ color: '#2563eb', fontWeight: 600 }}
+          >
             Create Customer Account
           </Link>
         </div>

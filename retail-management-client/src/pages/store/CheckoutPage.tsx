@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { CreditCard, Truck, Store, AlertCircle, Lock } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -8,7 +8,7 @@ import { Order, ApiResponse } from '../../types';
 
 export const CheckoutPage: React.FC = () => {
   const { items, subTotal, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [fulfillmentType, setFulfillmentType] = useState<number>(0); // 0 = Delivery, 1 = Pickup
@@ -28,7 +28,15 @@ export const CheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    if (user) {
+      if (user.fullName) setCustomerName(user.fullName);
+      if (user.email) setCustomerEmail(user.email);
+      if (user.phoneNumber) setCustomerPhone(user.phoneNumber);
+    }
+  }, [user]);
+
+  useEffect(() => {
     apiClient.get<ApiResponse<any>>('/businesssettings')
       .then((res) => {
         if (res.data.success && res.data.data) {
@@ -47,6 +55,32 @@ export const CheckoutPage: React.FC = () => {
   if (items.length === 0) {
     navigate('/cart');
     return null;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="container" style={{ padding: '4rem 1.5rem', maxWidth: 520, margin: '0 auto', textAlign: 'center' }}>
+        <div className="card" style={{ padding: '2.5rem 2rem' }}>
+          <div style={{ width: 52, height: 52, borderRadius: '9999px', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+            <Lock size={26} />
+          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>
+            Sign In to Complete Order
+          </h2>
+          <p style={{ color: '#64748b', fontSize: '0.9375rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+            You need to be signed in to your customer account to place orders. This ensures secure order dispatch, tracking, and invoices.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <Link to="/login?redirect=/checkout" className="btn btn-primary" style={{ padding: '0.75rem', justifyContent: 'center', fontSize: '0.9375rem' }}>
+              Sign In to Proceed →
+            </Link>
+            <Link to="/register?redirect=/checkout" className="btn btn-secondary" style={{ padding: '0.75rem', justifyContent: 'center', fontSize: '0.9375rem' }}>
+              Create New Customer Account
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const handleSubmitOrder = async (e: React.FormEvent) => {

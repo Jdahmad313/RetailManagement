@@ -74,8 +74,10 @@ export const RegisterPage: React.FC = () => {
     setLoading(true);
     setErrorMsg(null);
     try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectUrl = searchParams.get('redirect');
       await verifyRegisterOtp(target, otpCode.trim());
-      navigate('/');
+      navigate(redirectUrl || '/');
     } catch (err: any) {
       setErrorMsg(err.response?.data?.message || err.message || 'Verification failed.');
     } finally {

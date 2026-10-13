@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ShoppingBag, ArrowLeft, CheckCircle, AlertTriangle, Star, MessageSquare, Send } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, CheckCircle, AlertTriangle, Star, MessageSquare, Send, Lock } from 'lucide-react';
 import { Product, ProductReview, ApiResponse } from '../../types';
 import { apiClient } from '../../api/client';
 import { useCart } from '../../context/CartContext';
@@ -137,15 +137,12 @@ export const ProductDetailPage: React.FC = () => {
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!product || !comment.trim()) return;
+    if (!product || !comment.trim() || !isAuthenticated) return;
     setSubmittingReview(true);
     setReviewError(null);
     try {
-      const authorName = (isAuthenticated ? user?.fullName : guestName.trim()) || 'Valued Customer';
-      const authorEmail = (isAuthenticated ? user?.email : guestEmail.trim()) || 'customer@store.local';
-
       const res = await apiClient.post<ApiResponse<ProductReview>>(
-        `/products/${product.id}/reviews?guestName=${encodeURIComponent(authorName)}&guestEmail=${encodeURIComponent(authorEmail)}`,
+        `/products/${product.id}/reviews`,
         {
           rating,
           comment: comment.trim(),
@@ -323,78 +320,76 @@ export const ProductDetailPage: React.FC = () => {
               </div>
             )}
 
-            <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.35rem', color: '#475569' }}>
-                  Rating
-                </label>
-                <div style={{ display: 'flex', gap: '0.35rem' }}>
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <button
-                      type="button"
-                      key={s}
-                      onClick={() => setRating(s)}
-                      style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#eab308' }}
-                    >
-                      <Star size={24} fill={s <= rating ? '#eab308' : 'none'} />
-                    </button>
-                  ))}
-                  <span style={{ fontSize: '0.875rem', fontWeight: 700, marginLeft: '0.5rem', color: '#334155' }}>
-                    {rating} / 5 Stars
-                  </span>
+            {!isAuthenticated ? (
+              <div style={{ padding: '2rem 1.25rem', backgroundColor: '#f8fafc', borderRadius: '0.5rem', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+                <div style={{ width: 44, height: 44, borderRadius: '9999px', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem' }}>
+                  <Lock size={20} />
                 </div>
+                <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.35rem' }}>
+                  Customer Sign-In Required
+                </h4>
+                <p style={{ fontSize: '0.8125rem', color: '#64748b', maxWidth: 300, margin: '0 auto 1.25rem', lineHeight: 1.5 }}>
+                  Only verified, signed-in customers can submit reviews and ratings for products.
+                </p>
+                <Link
+                  to={`/login?redirect=/product/${product.id}#reviews`}
+                  className="btn btn-primary"
+                  style={{ display: 'inline-flex', padding: '0.5rem 1.25rem', fontSize: '0.8125rem' }}
+                >
+                  Sign In to Write a Review →
+                </Link>
               </div>
+            ) : (
+              <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ fontSize: '0.8125rem', color: '#475569', backgroundColor: '#f1f5f9', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>Reviewing as:</span> <strong style={{ color: '#0f172a' }}>{user?.fullName}</strong> <span style={{ color: '#94a3b8' }}>({user?.email})</span>
+                </div>
 
-              {!isAuthenticated && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Your Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={guestName}
-                      onChange={(e) => setGuestName(e.target.value)}
-                      placeholder="Jane Doe"
-                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontSize: '0.8125rem' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Email Address *</label>
-                    <input
-                      type="email"
-                      required
-                      value={guestEmail}
-                      onChange={(e) => setGuestEmail(e.target.value)}
-                      placeholder="jane@example.com"
-                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontSize: '0.8125rem' }}
-                    />
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.35rem', color: '#475569' }}>
+                    Rating
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.35rem' }}>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <button
+                        type="button"
+                        key={s}
+                        onClick={() => setRating(s)}
+                        style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#eab308' }}
+                      >
+                        <Star size={24} fill={s <= rating ? '#eab308' : 'none'} />
+                      </button>
+                    ))}
+                    <span style={{ fontSize: '0.875rem', fontWeight: 700, marginLeft: '0.5rem', color: '#334155' }}>
+                      {rating} / 5 Stars
+                    </span>
                   </div>
                 </div>
-              )}
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem', color: '#475569' }}>
-                  Your Feedback & Experience *
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Tell other shoppers how this product performed..."
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontSize: '0.8125rem', resize: 'vertical' }}
-                />
-              </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem', color: '#475569' }}>
+                    Your Feedback & Experience *
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Tell other shoppers how this product performed..."
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontSize: '0.8125rem', resize: 'vertical' }}
+                  />
+                </div>
 
-              <button
-                type="submit"
-                disabled={submittingReview}
-                className="btn btn-primary"
-                style={{ alignSelf: 'flex-start', padding: '0.5rem 1.25rem', gap: '0.35rem' }}
-              >
-                <Send size={15} /> {submittingReview ? 'Submitting...' : 'Post Review'}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={submittingReview}
+                  className="btn btn-primary"
+                  style={{ alignSelf: 'flex-start', padding: '0.5rem 1.25rem', gap: '0.35rem' }}
+                >
+                  <Send size={15} /> {submittingReview ? 'Submitting...' : 'Post Review'}
+                </button>
+              </form>
+            )}
           </div>
 
           {/* List of Reviews */}

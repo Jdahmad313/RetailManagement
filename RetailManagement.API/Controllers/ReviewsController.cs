@@ -27,17 +27,17 @@ public class ReviewsController : BaseApiController
     }
 
     [HttpPost]
-    [AllowAnonymous]
+    [Authorize]
     public async Task<ActionResult<ApiResponse<ProductReviewDto>>> AddReview(
         Guid productId,
         [FromBody] CreateProductReviewDto dto,
-        [FromQuery] string? guestName,
-        [FromQuery] string? guestEmail,
         CancellationToken ct)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var userName = User.FindFirstValue("name") ?? guestName ?? "Verified Customer";
-        var userEmail = User.FindFirstValue(ClaimTypes.Email) ?? guestEmail ?? "customer@store.local";
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        var userName = User.FindFirstValue("name") ?? User.Identity?.Name ?? "Verified Customer";
+        var userEmail = User.FindFirstValue(ClaimTypes.Email) ?? "customer@store.local";
 
         var result = await _reviewService.AddReviewAsync(productId, dto, userId, userName, userEmail, ct);
         return CreatedSuccess($"/api/products/{productId}/reviews/{result.Id}", result, "Thank you! Your review has been submitted.");

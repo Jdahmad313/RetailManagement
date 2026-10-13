@@ -110,7 +110,7 @@ export const StorefrontLayout: React.FC = () => {
                 {profile?.businessName || 'Apex Retail'}
               </h1>
               <p style={{ fontSize: '0.7rem', color: '#64748b', margin: '2px 0 0' }}>
-                {profile?.tagline || 'Everyday Essentials & POS'}
+                {profile?.tagline || 'Everyday Essentials & Quality Store'}
               </p>
             </div>
           </Link>
@@ -362,7 +362,7 @@ export const StorefrontLayout: React.FC = () => {
                 {profile?.businessName || 'Apex Retail'}
               </h3>
               <p style={{ fontSize: '0.875rem', color: '#94a3b8', lineHeight: 1.6 }}>
-                Unified multi-channel retail management system with verified stock, in-store POS, and customer delivery.
+                Modern verified e-commerce retail store with real-time stock, premium products, and fast home delivery.
               </p>
             </div>
             <div>

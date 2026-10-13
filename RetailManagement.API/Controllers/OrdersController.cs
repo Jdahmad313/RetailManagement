@@ -17,10 +17,12 @@ public class OrdersController : BaseApiController
     }
 
     [HttpPost]
-    [AllowAnonymous]
+    [Authorize]
     public async Task<ActionResult<ApiResponse<OrderDto>>> CreateOrder([FromBody] CreateOrderDto dto, CancellationToken ct)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
         var result = await _orderService.CreateOrderAsync(dto, userId, ct);
         return CreatedSuccess($"/api/v1/orders/{result.Id}", result, "Order placed successfully.");
     }

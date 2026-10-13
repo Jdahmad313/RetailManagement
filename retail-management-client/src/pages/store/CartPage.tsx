@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { apiClient } from '../../api/client';
 import { ApiResponse, BusinessProfile } from '../../types';
 
 export const CartPage: React.FC = () => {
   const { items, updateQuantity, removeFromCart, clearCart, subTotal, itemCount } = useCart();
+  const { isAuthenticated } = useAuth();
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
 
   useEffect(() => {
@@ -184,9 +186,15 @@ export const CartPage: React.FC = () => {
             </span>
           </div>
 
-          <Link to="/checkout" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', justifyContent: 'center' }}>
-            Proceed to Checkout <ArrowRight size={16} />
-          </Link>
+          {isAuthenticated ? (
+            <Link to="/checkout" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', justifyContent: 'center' }}>
+              Proceed to Checkout <ArrowRight size={16} />
+            </Link>
+          ) : (
+            <Link to="/login?redirect=/checkout" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', justifyContent: 'center' }}>
+              Sign In to Checkout <ArrowRight size={16} />
+            </Link>
+          )}
         </div>
       </div>
     </div>
