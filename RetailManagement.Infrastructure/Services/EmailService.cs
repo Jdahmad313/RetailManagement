@@ -27,11 +27,26 @@ public class EmailService : IEmailService
 
     public async Task<bool> SendEmailAsync(string toEmail, string toName, string subject, string htmlBody, CancellationToken ct = default)
     {
-        var smtpHost = _configuration["EmailSettings:SmtpHost"] ?? "smtp-relay.brevo.com";
-        var smtpPortStr = _configuration["EmailSettings:SmtpPort"];
-        var senderEmail = _configuration["EmailSettings:SenderEmail"] ?? "sufisheeen@gmail.com";
-        var senderName = _configuration["EmailSettings:SenderName"] ?? "Apex Retail Store";
-        var username = _configuration["EmailSettings:Username"] ?? "bdf3b2001@smtp-brevo.com";
+        var (success, _, _) = await SendEmailDetailedAsync(toEmail, toName, subject, htmlBody, ct);
+        return success;
+    }
+
+    public async Task<(bool Success, string Provider, string? ErrorMessage)> SendEmailDetailedAsync(string toEmail, string toName, string subject, string htmlBody, CancellationToken ct = default)
+    {
+        var smtpHost = _configuration["EmailSettings:SmtpHost"] 
+            ?? Environment.GetEnvironmentVariable("EmailSettings__SmtpHost")
+            ?? "smtp-relay.brevo.com";
+        var smtpPortStr = _configuration["EmailSettings:SmtpPort"]
+            ?? Environment.GetEnvironmentVariable("EmailSettings__SmtpPort");
+        var senderEmail = _configuration["EmailSettings:SenderEmail"] 
+            ?? Environment.GetEnvironmentVariable("EmailSettings__SenderEmail")
+            ?? "sufisheeen@gmail.com";
+        var senderName = _configuration["EmailSettings:SenderName"] 
+            ?? Environment.GetEnvironmentVariable("EmailSettings__SenderName")
+            ?? "Apex Retail Store";
+        var username = _configuration["EmailSettings:Username"] 
+            ?? Environment.GetEnvironmentVariable("EmailSettings__Username")
+            ?? "bdf3b2001@smtp-brevo.com";
         
         var password = _configuration["EmailSettings:Password"];
         if (string.IsNullOrWhiteSpace(password))
@@ -52,7 +67,7 @@ public class EmailService : IEmailService
             ?? Environment.GetEnvironmentVariable("RESEND_API_KEY")
             ?? (password != null && password.StartsWith("re_") ? password : null);
 
-        // 1. HTTPS REST API Dispatch (Port 443 - Never blocked on Render free tier)
+        // 1. HTTPS REST API Dispatch: Brevo (Port 443 - Never blocked on Render free tier)
         if (!string.IsNullOrWhiteSpace(brevoApiKey))
         {
             try
@@ -73,17 +88,20 @@ public class EmailService : IEmailService
                 if (resp.IsSuccessStatusCode)
                 {
                     _logger.LogInformation("Email sent successfully to {ToEmail} via Brevo HTTPS REST API", toEmail);
-                    return true;
+                    return (true, "Brevo HTTPS REST API (Port 443)", null);
                 }
                 var err = await resp.Content.ReadAsStringAsync(ct);
                 _logger.LogWarning("Brevo HTTPS API returned {Status}: {Error}", resp.StatusCode, err);
+                return (false, "Brevo HTTPS REST API (Port 443)", $"Brevo API responded with HTTP {resp.StatusCode}: {err}");
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Brevo HTTPS API delivery error: {Message}", ex.Message);
+                return (false, "Brevo HTTPS REST API (Port 443)", $"Brevo HTTPS dispatch exception: {ex.Message}");
             }
         }
 
+        // 2. HTTPS REST API Dispatch: Resend (Port 443 - Never blocked on Render free tier)
         if (!string.IsNullOrWhiteSpace(resendApiKey))
         {
             try
@@ -104,14 +122,16 @@ public class EmailService : IEmailService
                 if (resp.IsSuccessStatusCode)
                 {
                     _logger.LogInformation("Email sent successfully to {ToEmail} via Resend HTTPS REST API", toEmail);
-                    return true;
+                    return (true, "Resend HTTPS REST API (Port 443)", null);
                 }
                 var err = await resp.Content.ReadAsStringAsync(ct);
                 _logger.LogWarning("Resend HTTPS API returned {Status}: {Error}", resp.StatusCode, err);
+                return (false, "Resend HTTPS REST API (Port 443)", $"Resend API responded with HTTP {resp.StatusCode}: {err}");
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Resend HTTPS API delivery error: {Message}", ex.Message);
+                return (false, "Resend HTTPS REST API (Port 443)", $"Resend HTTPS dispatch exception: {ex.Message}");
             }
         }
 
@@ -129,9 +149,10 @@ public class EmailService : IEmailService
                                "{BodySnippet}\n" +
                                "========================================================================\n",
                                smtpHost, username, !string.IsNullOrWhiteSpace(password), toName, toEmail, subject, htmlBody.Length > 600 ? htmlBody[..600] + "..." : htmlBody);
-            return true;
+            return (true, "Development Simulation (No Credentials)", null);
         }
 
+        // 3. Raw SMTP Fallback (Will fail on Render Free due to outbound port blocks 25, 465, 587, 2525)
         try
         {
             var message = new MimeMessage();
@@ -141,10 +162,9 @@ public class EmailService : IEmailService
             message.Body = new TextPart(TextFormat.Html) { Text = htmlBody };
 
             using var client = new SmtpClient();
-            // Ensure Linux Docker environments or root CA differences do not abort Brevo STARTTLS handshake
             client.ServerCertificateValidationCallback = (s, c, h, e) => true;
             client.CheckCertificateRevocation = false;
-            client.Timeout = 15000;
+            client.Timeout = 10000;
 
             var secureOption = port == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
             await client.ConnectAsync(smtpHost, port, secureOption, ct);
@@ -153,13 +173,113 @@ public class EmailService : IEmailService
             await client.SendAsync(message, ct);
             await client.DisconnectAsync(true, ct);
             _logger.LogInformation("Email sent successfully to {ToEmail} via {Host}:{Port}", toEmail, smtpHost, port);
-            return true;
+            return (true, $"SMTP ({smtpHost}:{port})", null);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send email to {ToEmail} via SMTP ({Host}:{Port}): {Message}", toEmail, smtpHost, port, ex.Message);
-            return false;
+            var isBlockedPortNote = "Render Free Web Services block outbound SMTP ports (25, 465, 587, 2525). To send emails reliably on Render, add BREVO_API_KEY (starts with 'xkeysib-') or RESEND_API_KEY (starts with 're_') to your Render Environment Variables to dispatch over HTTPS port 443.";
+            return (false, $"SMTP ({smtpHost}:{port})", $"Connection failed: {ex.Message}. Hint: {isBlockedPortNote}");
         }
+    }
+
+    public Dictionary<string, object> GetDiagnostics()
+    {
+        var brevoApiKey = _configuration["EmailSettings:ApiKey"]
+            ?? Environment.GetEnvironmentVariable("BREVO_API_KEY")
+            ?? Environment.GetEnvironmentVariable("BREVO_KEY");
+
+        var resendApiKey = _configuration["EmailSettings:ResendApiKey"]
+            ?? Environment.GetEnvironmentVariable("RESEND_API_KEY");
+
+        var password = _configuration["EmailSettings:Password"]
+            ?? _configuration["EmailSettings__Password"]
+            ?? Environment.GetEnvironmentVariable("EmailSettings__Password")
+            ?? Environment.GetEnvironmentVariable("EmailSettings:Password")
+            ?? Environment.GetEnvironmentVariable("BREVO_SMTP_KEY")
+            ?? Environment.GetEnvironmentVariable("SMTP_PASSWORD");
+
+        var senderEmail = _configuration["EmailSettings:SenderEmail"] 
+            ?? Environment.GetEnvironmentVariable("EmailSettings__SenderEmail")
+            ?? "sufisheeen@gmail.com";
+
+        var username = _configuration["EmailSettings:Username"]
+            ?? Environment.GetEnvironmentVariable("EmailSettings__Username")
+            ?? "bdf3b2001@smtp-brevo.com";
+
+        var smtpHost = _configuration["EmailSettings:SmtpHost"]
+            ?? Environment.GetEnvironmentVariable("EmailSettings__SmtpHost")
+            ?? "smtp-relay.brevo.com";
+
+        string brevoKeyStatus;
+        if (string.IsNullOrWhiteSpace(brevoApiKey))
+        {
+            brevoKeyStatus = "NOT_CONFIGURED";
+        }
+        else if (brevoApiKey.StartsWith("xkeysib-"))
+        {
+            brevoKeyStatus = "VALID_V3_REST_KEY (xkeysib-...)";
+        }
+        else if (brevoApiKey.StartsWith("xsmtpsib-"))
+        {
+            brevoKeyStatus = "MISCONFIGURED: Value starts with 'xsmtpsib-' which is an SMTP password, not a v3 REST API key. Generate an API key under Brevo -> SMTP & API -> API Keys tab.";
+        }
+        else
+        {
+            brevoKeyStatus = $"CONFIGURED (length {brevoApiKey.Length})";
+        }
+
+        string smtpPasswordStatus;
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            smtpPasswordStatus = "NOT_CONFIGURED";
+        }
+        else if (password.StartsWith("xsmtpsib-"))
+        {
+            smtpPasswordStatus = "CONFIGURED_AS_SMTP_PASSWORD (xsmtpsib-... Note: Render Free blocks SMTP ports 25, 465, 587. Outbound raw SMTP fails on Render.)";
+        }
+        else if (password.StartsWith("xkeysib-"))
+        {
+            smtpPasswordStatus = "CONFIGURED_AS_BREVO_REST_KEY (xkeysib-... Auto-promoted to HTTPS dispatch)";
+        }
+        else
+        {
+            smtpPasswordStatus = $"CONFIGURED (length {password.Length})";
+        }
+
+        string resendKeyStatus = string.IsNullOrWhiteSpace(resendApiKey)
+            ? "NOT_CONFIGURED"
+            : (resendApiKey.StartsWith("re_") ? "VALID_KEY (re_...)" : $"CONFIGURED (length {resendApiKey.Length})");
+
+        string activeEngine;
+        if (!string.IsNullOrWhiteSpace(brevoApiKey) || (password != null && password.StartsWith("xkeysib-")))
+        {
+            activeEngine = "HTTPS_BREVO_V3_REST (Port 443)";
+        }
+        else if (!string.IsNullOrWhiteSpace(resendApiKey) || (password != null && password.StartsWith("re_")))
+        {
+            activeEngine = "HTTPS_RESEND_REST (Port 443)";
+        }
+        else if (!string.IsNullOrWhiteSpace(password))
+        {
+            activeEngine = "RAW_SMTP (Render Free blocks port 587 - expected to time out)";
+        }
+        else
+        {
+            activeEngine = "LOCAL_SIMULATION";
+        }
+
+        return new Dictionary<string, object>
+        {
+            ["activeEngine"] = activeEngine,
+            ["senderEmail"] = senderEmail,
+            ["username"] = username,
+            ["smtpHost"] = smtpHost,
+            ["brevoApiKeyStatus"] = brevoKeyStatus,
+            ["resendApiKeyStatus"] = resendKeyStatus,
+            ["smtpPasswordStatus"] = smtpPasswordStatus,
+            ["renderFreeTierPortBlockNotice"] = "Render Free Web Services block outbound TCP ports 25, 465, 587, and 2525. Direct SMTP relay is not possible on free tier. You must use BREVO_API_KEY (starts with 'xkeysib-') or RESEND_API_KEY (starts with 're_') to send over HTTPS port 443."
+        };
     }
 
     public async Task<bool> SendOtpEmailAsync(string toEmail, string customerName, string otpCode, CancellationToken ct = default)

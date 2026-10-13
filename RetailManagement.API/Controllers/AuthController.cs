@@ -135,6 +135,14 @@ public class AuthController : BaseApiController
         return Success(true, "Password changed successfully.");
     }
 
+    [HttpGet("email-diagnostics")]
+    [AllowAnonymous]
+    public ActionResult<ApiResponse<object>> GetEmailDiagnostics()
+    {
+        var diagnostics = _emailService.GetDiagnostics();
+        return Success<object>(diagnostics, "Email system diagnostic status.");
+    }
+
     [HttpPost("test-email")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<object>>> TestEmail([FromQuery] string? to, CancellationToken ct)
@@ -145,13 +153,25 @@ public class AuthController : BaseApiController
             <div style='font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 500px;'>
                 <h2 style='color: #2563eb; margin-top: 0;'>Apex Retail System</h2>
                 <p>Hello,</p>
-                <p>This is a live test email sent directly from the Render deployment to verify SMTP connectivity.</p>
+                <p>This is a live test email sent directly from the Render deployment.</p>
                 <div style='background: #f1f5f9; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px;'>
                     Timestamp: {DateTime.UtcNow:u}<br/>
-                    Status: SMTP Relay Operational
+                    Status: Verified
                 </div>
             </div>";
-        var sent = await _emailService.SendEmailAsync(target, "Apex User", subject, html, ct);
-        return Success<object>(new { recipient = target, delivered = sent }, sent ? "Test email dispatched successfully." : "Failed to deliver test email. Check server logs.");
+
+        var (sent, provider, error) = await _emailService.SendEmailDetailedAsync(target, "Apex User", subject, html, ct);
+        var diagnostics = _emailService.GetDiagnostics();
+
+        var result = new
+        {
+            recipient = target,
+            delivered = sent,
+            attemptedProvider = provider,
+            error = error,
+            environmentDiagnostics = diagnostics
+        };
+
+        return Success<object>(result, sent ? "Test email dispatched successfully." : $"Failed to deliver test email: {error}");
     }
 }
