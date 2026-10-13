@@ -33,11 +33,6 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleQuickFill = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-  };
-
   return (
     <div style={{ minHeight: 'calc(100vh - 200px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1.5rem' }}>
       <div className="card" style={{ width: '100%', maxWidth: 440, padding: '2rem' }}>
@@ -54,39 +49,6 @@ export const LoginPage: React.FC = () => {
             <AlertCircle size={16} /> {errorMsg}
           </div>
         )}
-
-        {/* Quick Demo Fill Buttons */}
-        <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.375rem', marginBottom: '1.25rem', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '0.5rem' }}>
-            ⚡ 1-Click Preloaded Accounts:
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.375rem' }}>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('admin@retail.local', 'Admin@123456')}
-              className="btn btn-secondary"
-              style={{ padding: '0.25rem', fontSize: '0.75rem' }}
-            >
-              Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('cashier@retail.local', 'Cashier@123456')}
-              className="btn btn-secondary"
-              style={{ padding: '0.25rem', fontSize: '0.75rem' }}
-            >
-              Cashier
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('customer@retail.local', 'Customer@123456')}
-              className="btn btn-secondary"
-              style={{ padding: '0.25rem', fontSize: '0.75rem' }}
-            >
-              Customer
-            </button>
-          </div>
-        </div>
 
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
