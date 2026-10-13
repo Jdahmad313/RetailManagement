@@ -1,3 +1,6 @@
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +17,7 @@ public class EmailService : IEmailService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<EmailService> _logger;
+    private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
 
     public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
     {
@@ -37,6 +41,78 @@ public class EmailService : IEmailService
                 ?? Environment.GetEnvironmentVariable("EmailSettings:Password")
                 ?? Environment.GetEnvironmentVariable("BREVO_SMTP_KEY")
                 ?? Environment.GetEnvironmentVariable("SMTP_PASSWORD");
+        }
+
+        var brevoApiKey = _configuration["EmailSettings:ApiKey"]
+            ?? Environment.GetEnvironmentVariable("BREVO_API_KEY")
+            ?? Environment.GetEnvironmentVariable("BREVO_KEY")
+            ?? (password != null && password.StartsWith("xkeysib-") ? password : null);
+
+        var resendApiKey = _configuration["EmailSettings:ResendApiKey"]
+            ?? Environment.GetEnvironmentVariable("RESEND_API_KEY")
+            ?? (password != null && password.StartsWith("re_") ? password : null);
+
+        // 1. HTTPS REST API Dispatch (Port 443 - Never blocked on Render free tier)
+        if (!string.IsNullOrWhiteSpace(brevoApiKey))
+        {
+            try
+            {
+                var payload = new
+                {
+                    sender = new { name = senderName, email = senderEmail },
+                    to = new[] { new { email = toEmail, name = toName } },
+                    subject = subject,
+                    htmlContent = htmlBody
+                };
+
+                using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
+                req.Headers.Add("api-key", brevoApiKey.Trim());
+                req.Content = JsonContent.Create(payload);
+
+                var resp = await _httpClient.SendAsync(req, ct);
+                if (resp.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Email sent successfully to {ToEmail} via Brevo HTTPS REST API", toEmail);
+                    return true;
+                }
+                var err = await resp.Content.ReadAsStringAsync(ct);
+                _logger.LogWarning("Brevo HTTPS API returned {Status}: {Error}", resp.StatusCode, err);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Brevo HTTPS API delivery error: {Message}", ex.Message);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(resendApiKey))
+        {
+            try
+            {
+                var payload = new
+                {
+                    from = $"{senderName} <onboarding@resend.dev>",
+                    to = new[] { toEmail },
+                    subject = subject,
+                    html = htmlBody
+                };
+
+                using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", resendApiKey.Trim());
+                req.Content = JsonContent.Create(payload);
+
+                var resp = await _httpClient.SendAsync(req, ct);
+                if (resp.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Email sent successfully to {ToEmail} via Resend HTTPS REST API", toEmail);
+                    return true;
+                }
+                var err = await resp.Content.ReadAsStringAsync(ct);
+                _logger.LogWarning("Resend HTTPS API returned {Status}: {Error}", resp.StatusCode, err);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Resend HTTPS API delivery error: {Message}", ex.Message);
+            }
         }
 
         int port = 587;
