@@ -30,7 +30,14 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception occurred: {Message}", ex.Message);
+            if (ex is AppException)
+            {
+                _logger.LogWarning("Handled application exception on {Path}: {Message}", context.Request.Path, ex.Message);
+            }
+            else
+            {
+                _logger.LogError(ex, "Unhandled exception occurred on {Path}: {Message}", context.Request.Path, ex.Message);
+            }
             await HandleExceptionAsync(context, ex);
         }
     }
