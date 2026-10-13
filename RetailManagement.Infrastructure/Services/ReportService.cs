@@ -153,4 +153,101 @@ public class ReportService : IReportService
             TotalRetailValue = totalRetail
         };
     }
+
+    public async Task<IReadOnlyList<ProductYearlyAnalyticsDto>> GetProductYearlyAnalyticsAsync(int year, CancellationToken ct = default)
+    {
+        if (year <= 0) year = DateTime.UtcNow.Year;
+
+        var salesRecords = await _unitOfWork.Repository<ProductMonthlySales>()
+            .Query()
+            .Where(s => s.Year == year)
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        var allProducts = await _unitOfWork.Repository<Product>()
+            .Query()
+            .Include(p => p.Category)
+            .Where(p => !p.IsDeleted)
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        var monthNames = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
+        var result = new List<ProductYearlyAnalyticsDto>();
+
+        foreach (var p in allProducts)
+        {
+            var pSales = salesRecords.Where(s => s.ProductId == p.Id).ToList();
+            var totalUnits = pSales.Sum(s => s.UnitsSold);
+            var totalRev = pSales.Sum(s => s.TotalRevenue);
+            var totalCost = pSales.Sum(s => s.TotalCost);
+            var totalGross = pSales.Sum(s => s.GrossProfit);
+
+            var monthlyBuckets = Enumerable.Range(1, 12).Select(m =>
+            {
+                var mRec = pSales.FirstOrDefault(x => x.Month == m);
+                return new ProductMonthlyBucketDto
+                {
+                    Month = m,
+                    MonthName = monthNames[m - 1],
+                    UnitsSold = mRec?.UnitsSold ?? 0,
+                    Revenue = mRec?.TotalRevenue ?? 0m,
+                    GrossProfit = mRec?.GrossProfit ?? 0m
+                };
+            }).ToList();
+
+            result.Add(new ProductYearlyAnalyticsDto
+            {
+                ProductId = p.Id,
+                SKU = p.SKU,
+                ProductName = p.Name,
+                CategoryName = p.Category?.Name ?? "General",
+                Year = year,
+                TotalUnitsSold = totalUnits,
+                TotalRevenue = totalRev,
+                TotalCost = totalCost,
+                TotalGrossProfit = totalGross,
+                MonthlySales = monthlyBuckets
+            });
+        }
+
+        return result.OrderByDescending(r => r.TotalRevenue).ThenBy(r => r.ProductName).ToList();
+    }
+
+    public async Task<IReadOnlyList<ProductAuditLogDto>> GetProductAuditLogsAsync(Guid? productId, int limit = 100, CancellationToken ct = default)
+    {
+        var query = _unitOfWork.Repository<ProductAuditLog>()
+            .Query()
+            .AsNoTracking();
+
+        if (productId.HasValue && productId.Value != Guid.Empty)
+        {
+            query = query.Where(a => a.ProductId == productId.Value);
+        }
+
+        var logs = await query
+            .OrderByDescending(a => a.CreatedAtUtc)
+            .Take(limit)
+            .Select(a => new ProductAuditLogDto
+            {
+                Id = a.Id,
+                ProductId = a.ProductId,
+                SKU = a.SKU,
+                ProductName = a.ProductName,
+                ActionType = a.ActionType,
+                OldSellingPrice = a.OldSellingPrice,
+                NewSellingPrice = a.NewSellingPrice,
+                OldPurchaseCost = a.OldPurchaseCost,
+                NewPurchaseCost = a.NewPurchaseCost,
+                OldStock = a.OldStock,
+                NewStock = a.NewStock,
+                ChangeSummary = a.ChangeSummary,
+                ChangedByUserId = a.ChangedByUserId,
+                ChangedByUserName = a.ChangedByUserName,
+                CreatedAtUtc = a.CreatedAtUtc
+            })
+            .ToListAsync(ct);
+
+        return logs;
+    }
 }

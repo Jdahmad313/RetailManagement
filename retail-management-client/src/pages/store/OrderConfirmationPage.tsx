@@ -63,10 +63,13 @@ export const OrderConfirmationPage: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button onClick={() => window.print()} className="btn btn-secondary" style={{ fontSize: '0.8125rem' }}>
-            <Printer size={15} /> Print Receipt
+            <Printer size={15} /> Print / Save PDF
           </button>
+          <Link to="/account" className="btn btn-secondary" style={{ fontSize: '0.8125rem' }}>
+            <Package size={15} /> View My Orders
+          </Link>
           <Link to="/catalog" className="btn btn-primary" style={{ fontSize: '0.8125rem' }}>
             Continue Shopping <ArrowRight size={15} />
           </Link>

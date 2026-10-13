@@ -62,6 +62,9 @@ public class BusinessSettingsService : IBusinessSettingsService
         profile.AllowPickup = dto.AllowPickup;
         profile.AllowDelivery = dto.AllowDelivery;
         profile.AllowNegativeStock = dto.AllowNegativeStock;
+        profile.WhatsAppNumber = dto.WhatsAppNumber;
+        profile.EnabledPaymentMethodsJson = dto.EnabledPaymentMethodsJson;
+        profile.BankTransferInstructions = dto.BankTransferInstructions;
         profile.OperatingHoursJson = dto.OperatingHoursJson;
 
         _unitOfWork.Repository<BusinessProfile>().Update(profile);
@@ -94,6 +97,9 @@ public class BusinessSettingsService : IBusinessSettingsService
             AllowPickup = p.AllowPickup,
             AllowDelivery = p.AllowDelivery,
             AllowNegativeStock = p.AllowNegativeStock,
+            WhatsAppNumber = p.WhatsAppNumber,
+            EnabledPaymentMethodsJson = p.EnabledPaymentMethodsJson,
+            BankTransferInstructions = p.BankTransferInstructions,
             OperatingHoursJson = p.OperatingHoursJson
         };
     }

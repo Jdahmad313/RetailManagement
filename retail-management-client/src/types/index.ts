@@ -80,6 +80,8 @@ export interface Product {
   attributesJson?: string;
   isActive: boolean;
   isFeatured: boolean;
+  averageRating?: number;
+  reviewCount?: number;
   createdAtUtc: string;
   variants: ProductVariant[];
 }
@@ -266,5 +268,69 @@ export interface BusinessProfile {
   allowPickup: boolean;
   allowDelivery: boolean;
   allowNegativeStock: boolean;
+  whatsAppNumber?: string;
+  enabledPaymentMethodsJson?: string;
+  bankTransferInstructions?: string;
   operatingHoursJson: string;
 }
+
+export interface ProductReview {
+  id: string;
+  productId: string;
+  customerName: string;
+  rating: number;
+  comment: string;
+  createdAtUtc: string;
+}
+
+export interface CustomerFeedback {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  category: string;
+  subject: string;
+  message: string;
+  status: string;
+  createdAtUtc: string;
+}
+
+export interface ProductMonthlyBucket {
+  month: number;
+  monthName: string;
+  unitsSold: number;
+  revenue: number;
+  grossProfit: number;
+}
+
+export interface ProductYearlyAnalytics {
+  productId: string;
+  sku: string;
+  productName: string;
+  categoryName: string;
+  year: number;
+  totalUnitsSold: number;
+  totalRevenue: number;
+  totalCost: number;
+  totalGrossProfit: number;
+  monthlySales: ProductMonthlyBucket[];
+}
+
+export interface ProductAuditLog {
+  id: string;
+  productId: string;
+  sku: string;
+  productName: string;
+  actionType: string;
+  oldSellingPrice?: number;
+  newSellingPrice?: number;
+  oldPurchaseCost?: number;
+  newPurchaseCost?: number;
+  oldStock?: number;
+  newStock?: number;
+  changeSummary: string;
+  changedByUserId?: string;
+  changedByUserName?: string;
+  createdAtUtc: string;
+}
+

@@ -24,8 +24,25 @@ export const CheckoutPage: React.FC = () => {
   const [postalCode, setPostalCode] = useState('');
   const [notes, setNotes] = useState('');
 
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    apiClient.get<ApiResponse<any>>('/businesssettings')
+      .then((res) => {
+        if (res.data.success && res.data.data) {
+          setProfile(res.data.data);
+          try {
+            const enabled = JSON.parse(res.data.data.enabledPaymentMethodsJson || '[]');
+            if (enabled.includes('Card')) setPaymentMethod(1);
+            else if (enabled.includes('CashOnDelivery')) setPaymentMethod(3);
+            else if (enabled.includes('BankTransfer')) setPaymentMethod(2);
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   if (items.length === 0) {
     navigate('/cart');
@@ -92,8 +109,13 @@ export const CheckoutPage: React.FC = () => {
     }
   };
 
-  const deliveryFee = fulfillmentType === 0 ? (subTotal >= 75 ? 0 : 5) : 0;
-  const estimatedTax = subTotal * 0.085;
+  const currencySymbol = profile?.currencySymbol || 'Rs.';
+  const freeThreshold = profile?.freeDeliveryThreshold ?? 3000;
+  const standardDelivery = profile?.deliveryFee ?? 200;
+  const taxRate = profile?.defaultTaxRate ?? 5;
+
+  const deliveryFee = fulfillmentType === 0 ? (subTotal >= freeThreshold ? 0 : standardDelivery) : 0;
+  const estimatedTax = subTotal * (taxRate / 100);
   const grandTotal = subTotal + estimatedTax + deliveryFee;
 
   return (
@@ -107,7 +129,7 @@ export const CheckoutPage: React.FC = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmitOrder} style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '2rem', alignItems: 'start' }}>
+      <form onSubmit={handleSubmitOrder} className="checkout-form-grid" style={{ gap: '2rem', alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Customer Information */}
           <div className="card">
@@ -140,7 +162,7 @@ export const CheckoutPage: React.FC = () => {
                 type="tel"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="+1 (555) 000-0000"
+                placeholder="0300-1234567"
                 style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1' }}
               />
             </div>
@@ -243,36 +265,50 @@ export const CheckoutPage: React.FC = () => {
           <div className="card">
             <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1rem' }}>3. Payment Option</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="payment"
-                  checked={paymentMethod === 1}
-                  onChange={() => setPaymentMethod(1)}
-                />
-                <CreditCard size={18} />
-                <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Credit / Debit Card (Apex Integrated Gateway)</span>
-              </label>
+              {(!profile || profile?.enabledPaymentMethodsJson?.includes('Card')) && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    checked={paymentMethod === 1}
+                    onChange={() => setPaymentMethod(1)}
+                  />
+                  <CreditCard size={18} />
+                  <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Credit / Debit Card (Apex Integrated Gateway)</span>
+                </label>
+              )}
 
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="payment"
-                  checked={paymentMethod === 3}
-                  onChange={() => setPaymentMethod(3)}
-                />
-                <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Cash on Delivery / Pickup</span>
-              </label>
+              {(!profile || profile?.enabledPaymentMethodsJson?.includes('CashOnDelivery')) && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    checked={paymentMethod === 3}
+                    onChange={() => setPaymentMethod(3)}
+                  />
+                  <Truck size={18} />
+                  <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Cash on Delivery (COD)</span>
+                </label>
+              )}
 
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="payment"
-                  checked={paymentMethod === 2}
-                  onChange={() => setPaymentMethod(2)}
-                />
-                <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Direct Bank Transfer</span>
-              </label>
+              {(!profile || profile?.enabledPaymentMethodsJson?.includes('BankTransfer')) && (
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="payment"
+                      checked={paymentMethod === 2}
+                      onChange={() => setPaymentMethod(2)}
+                    />
+                    <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Direct Bank Transfer / Wire</span>
+                  </label>
+                  {paymentMethod === 2 && profile?.bankTransferInstructions && (
+                    <div style={{ marginTop: '0.5rem', padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: '0.375rem', border: '1px solid #bfdbfe', fontSize: '0.8125rem', color: '#1e40af' }}>
+                      <strong>Bank Instructions:</strong> {profile.bankTransferInstructions}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
@@ -300,7 +336,7 @@ export const CheckoutPage: React.FC = () => {
                   <span style={{ color: '#334155', maxWidth: '65%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {i.quantity}x {i.product.name}
                   </span>
-                  <span style={{ fontWeight: 600 }}>${(price * i.quantity).toFixed(2)}</span>
+                  <span style={{ fontWeight: 600 }}>{currencySymbol} {(price * i.quantity).toFixed(2)}</span>
                 </div>
               );
             })}
@@ -308,22 +344,22 @@ export const CheckoutPage: React.FC = () => {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
             <span style={{ color: '#64748b' }}>Subtotal</span>
-            <span style={{ fontWeight: 600 }}>${subTotal.toFixed(2)}</span>
+            <span style={{ fontWeight: 600 }}>{currencySymbol} {subTotal.toFixed(2)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-            <span style={{ color: '#64748b' }}>Tax (8.5%)</span>
-            <span style={{ fontWeight: 600 }}>${estimatedTax.toFixed(2)}</span>
+            <span style={{ color: '#64748b' }}>Tax ({taxRate}%)</span>
+            <span style={{ fontWeight: 600 }}>{currencySymbol} {estimatedTax.toFixed(2)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.875rem' }}>
             <span style={{ color: '#64748b' }}>Delivery</span>
             <span style={{ fontWeight: 600 }}>
-              {deliveryFee === 0 ? <span style={{ color: '#16a34a' }}>FREE</span> : `$${deliveryFee.toFixed(2)}`}
+              {deliveryFee === 0 ? <span style={{ color: '#16a34a' }}>FREE</span> : `${currencySymbol} ${deliveryFee.toFixed(2)}`}
             </span>
           </div>
 
           <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <span style={{ fontSize: '1rem', fontWeight: 700 }}>Total Due</span>
-            <span style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>${grandTotal.toFixed(2)}</span>
+            <span style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>{currencySymbol} {grandTotal.toFixed(2)}</span>
           </div>
 
           <button

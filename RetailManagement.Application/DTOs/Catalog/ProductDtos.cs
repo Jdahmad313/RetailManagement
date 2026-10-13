@@ -44,6 +44,8 @@ public class ProductDto
 
     public bool IsActive { get; set; }
     public bool IsFeatured { get; set; }
+    public double AverageRating { get; set; } = 5.0;
+    public int ReviewCount { get; set; } = 0;
     public DateTime CreatedAtUtc { get; set; }
 
     public List<ProductVariantDto> Variants { get; set; } = new();

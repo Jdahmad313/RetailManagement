@@ -135,6 +135,27 @@ public class InventoryService : IInventoryService
 
         _unitOfWork.Repository<Product>().Update(product);
         await _unitOfWork.Repository<InventoryMovement>().AddAsync(movement, ct);
+
+        // Record Product Audit Log
+        var audit = new ProductAuditLog
+        {
+            ProductId = product.Id,
+            SKU = product.SKU,
+            ProductName = product.Name,
+            ActionType = "StockAdjusted",
+            OldStock = qtyBefore,
+            NewStock = qtyAfter,
+            OldSellingPrice = product.SellingPrice,
+            NewSellingPrice = product.SellingPrice,
+            OldPurchaseCost = product.PurchaseCost,
+            NewPurchaseCost = product.PurchaseCost,
+            ChangeSummary = $"Stock adjusted by {dto.QuantityChange:+#;-#;0} units (from {qtyBefore} to {qtyAfter}). Reason: {dto.Reason ?? "Manual Adjustment"}",
+            ChangedByUserId = userId,
+            ChangedByUserName = userName ?? "System Administrator",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+        await _unitOfWork.Repository<ProductAuditLog>().AddAsync(audit, ct);
+
         await _unitOfWork.SaveChangesAsync(ct);
 
         return await _productService.GetByIdAsync(product.Id, ct);

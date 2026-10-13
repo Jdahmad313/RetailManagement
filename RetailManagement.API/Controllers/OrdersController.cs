@@ -41,6 +41,18 @@ public class OrdersController : BaseApiController
         return Success(result, "Order retrieved successfully.");
     }
 
+    [HttpGet("my-orders")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<PagedResponse<OrderDto>>>> GetMyOrders([FromQuery] QueryParameters filter, CancellationToken ct)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        var userEmail = User.FindFirstValue(ClaimTypes.Email);
+        var result = await _orderService.GetMyOrdersAsync(userId, userEmail, filter, ct);
+        return Success(result, "Orders retrieved successfully.");
+    }
+
     [HttpGet]
     [Authorize(Roles = "Admin,Manager,Cashier")]
     public async Task<ActionResult<ApiResponse<PagedResponse<OrderDto>>>> GetPaged([FromQuery] OrderFilterParams filter, CancellationToken ct)

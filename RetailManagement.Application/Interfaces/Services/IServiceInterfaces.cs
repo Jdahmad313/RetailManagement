@@ -16,6 +16,20 @@ public interface IAuthService
     Task<TokenResponseDto> LoginAsync(LoginDto dto, CancellationToken ct = default);
     Task<TokenResponseDto> RefreshTokenAsync(RefreshTokenDto dto, CancellationToken ct = default);
     Task RevokeTokenAsync(string token, CancellationToken ct = default);
+
+    // Real-world OTP Registration
+    Task<string> InitiateRegisterOtpAsync(RegisterInitiateDto dto, CancellationToken ct = default);
+    Task<TokenResponseDto> VerifyRegisterOtpAsync(VerifyOtpDto dto, CancellationToken ct = default);
+    Task<bool> ResendRegisterOtpAsync(ResendOtpDto dto, CancellationToken ct = default);
+
+    // Admin Cashier Management
+    Task<UserDto> InviteCashierAsync(InviteCashierDto dto, string portalUrl, CancellationToken ct = default);
+    Task<IReadOnlyList<UserDto>> GetCashiersAsync(CancellationToken ct = default);
+    Task DeleteCashierAsync(string id, CancellationToken ct = default);
+
+    // Profile & Password Updation for all users
+    Task<UserDto> UpdateProfileAsync(string userId, UpdateProfileDto dto, CancellationToken ct = default);
+    Task<bool> ChangePasswordAsync(string userId, ChangePasswordDto dto, CancellationToken ct = default);
 }
 
 public interface ICategoryService
@@ -51,6 +65,7 @@ public interface IOrderService
     Task<OrderDto> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<OrderDto> GetByOrderNumberAsync(string orderNumber, CancellationToken ct = default);
     Task<PagedResponse<OrderDto>> GetPagedOrdersAsync(OrderFilterParams filter, CancellationToken ct = default);
+    Task<PagedResponse<OrderDto>> GetMyOrdersAsync(string userId, string? userEmail, QueryParameters filter, CancellationToken ct = default);
     Task<OrderDto> UpdateStatusAsync(Guid id, UpdateOrderStatusDto dto, CancellationToken ct = default);
 }
 
@@ -76,6 +91,8 @@ public interface IReportService
 {
     Task<DashboardSummaryDto> GetDashboardSummaryAsync(CancellationToken ct = default);
     Task<InventoryValuationDto> GetInventoryValuationAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<ProductYearlyAnalyticsDto>> GetProductYearlyAnalyticsAsync(int year, CancellationToken ct = default);
+    Task<IReadOnlyList<ProductAuditLogDto>> GetProductAuditLogsAsync(Guid? productId, int limit = 100, CancellationToken ct = default);
 }
 
 public interface IBusinessSettingsService
@@ -83,3 +100,16 @@ public interface IBusinessSettingsService
     Task<BusinessProfileDto> GetSettingsAsync(CancellationToken ct = default);
     Task<BusinessProfileDto> UpdateSettingsAsync(UpdateBusinessProfileDto dto, CancellationToken ct = default);
 }
+
+public interface IReviewService
+{
+    Task<IReadOnlyList<RetailManagement.Application.DTOs.Reviews.ProductReviewDto>> GetByProductIdAsync(Guid productId, CancellationToken ct = default);
+    Task<RetailManagement.Application.DTOs.Reviews.ProductReviewDto> AddReviewAsync(Guid productId, RetailManagement.Application.DTOs.Reviews.CreateProductReviewDto dto, string? userId, string userName, string userEmail, CancellationToken ct = default);
+}
+
+public interface IFeedbackService
+{
+    Task<RetailManagement.Application.DTOs.Feedback.FeedbackDto> SubmitFeedbackAsync(RetailManagement.Application.DTOs.Feedback.CreateFeedbackDto dto, CancellationToken ct = default);
+    Task<IReadOnlyList<RetailManagement.Application.DTOs.Feedback.FeedbackDto>> GetAllFeedbackAsync(CancellationToken ct = default);
+}
+

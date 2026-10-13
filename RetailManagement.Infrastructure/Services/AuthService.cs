@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -21,17 +22,23 @@ public class AuthService : IAuthService
     private readonly RoleManager<AppRole> _roleManager;
     private readonly IConfiguration _configuration;
     private readonly RetailDbContext _dbContext;
+    private readonly IOtpService _otpService;
+    private readonly IEmailService _emailService;
 
     public AuthService(
         UserManager<AppUser> userManager,
         RoleManager<AppRole> roleManager,
         IConfiguration configuration,
-        RetailDbContext dbContext)
+        RetailDbContext dbContext,
+        IOtpService otpService,
+        IEmailService emailService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
         _dbContext = dbContext;
+        _otpService = otpService;
+        _emailService = emailService;
     }
 
     public async Task<TokenResponseDto> RegisterAsync(RegisterDto dto, CancellationToken ct = default)
@@ -58,7 +65,8 @@ public class AuthService : IAuthService
             throw new ValidationException(errors);
         }
 
-        var roleName = string.IsNullOrWhiteSpace(dto.Role) ? "Customer" : dto.Role;
+        // Public registration is strictly restricted to Customer role
+        const string roleName = "Customer";
         if (!await _roleManager.RoleExistsAsync(roleName))
         {
             await _roleManager.CreateAsync(new AppRole(roleName));
@@ -66,6 +74,201 @@ public class AuthService : IAuthService
         await _userManager.AddToRoleAsync(user, roleName);
 
         return await GenerateAuthResultAsync(user);
+    }
+
+    public async Task<string> InitiateRegisterOtpAsync(RegisterInitiateDto dto, CancellationToken ct = default)
+    {
+        var existing = await _userManager.FindByEmailAsync(dto.Email.Trim());
+        if (existing != null)
+        {
+            throw new BadRequestException("An account with this email address already exists.");
+        }
+
+        var target = dto.Email.Trim().ToLowerInvariant();
+        var payloadJson = JsonSerializer.Serialize(dto);
+
+        await _otpService.InitiateOtpAsync(target, dto.FullName.Trim(), "CustomerRegistration", payloadJson, ct);
+        return target;
+    }
+
+    public async Task<TokenResponseDto> VerifyRegisterOtpAsync(VerifyOtpDto dto, CancellationToken ct = default)
+    {
+        var target = dto.Target.Trim().ToLowerInvariant();
+        var payloadJson = await _otpService.VerifyOtpAsync(target, dto.OtpCode, "CustomerRegistration", ct);
+
+        if (string.IsNullOrEmpty(payloadJson))
+        {
+            throw new BadRequestException("Registration details missing or expired. Please sign up again.");
+        }
+
+        var registerData = JsonSerializer.Deserialize<RegisterInitiateDto>(payloadJson);
+        if (registerData == null)
+        {
+            throw new BadRequestException("Invalid registration data.");
+        }
+
+        var existing = await _userManager.FindByEmailAsync(registerData.Email.Trim());
+        if (existing != null)
+        {
+            return await GenerateAuthResultAsync(existing);
+        }
+
+        var user = new AppUser
+        {
+            UserName = registerData.Email.Trim(),
+            Email = registerData.Email.Trim(),
+            FullName = registerData.FullName.Trim(),
+            PhoneNumber = registerData.PhoneNumber?.Trim(),
+            EmailConfirmed = true
+        };
+
+        var result = await _userManager.CreateAsync(user, registerData.Password);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors.GroupBy(e => e.Code).ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+            throw new ValidationException(errors);
+        }
+
+        const string roleName = "Customer";
+        if (!await _roleManager.RoleExistsAsync(roleName))
+        {
+            await _roleManager.CreateAsync(new AppRole(roleName));
+        }
+        await _userManager.AddToRoleAsync(user, roleName);
+
+        return await GenerateAuthResultAsync(user);
+    }
+
+    public async Task<bool> ResendRegisterOtpAsync(ResendOtpDto dto, CancellationToken ct = default)
+    {
+        var target = dto.Target.Trim().ToLowerInvariant();
+        return await _otpService.ResendOtpAsync(target, "Customer", "CustomerRegistration", ct);
+    }
+
+    public async Task<UserDto> InviteCashierAsync(InviteCashierDto dto, string portalUrl, CancellationToken ct = default)
+    {
+        var existing = await _userManager.FindByEmailAsync(dto.Email.Trim());
+        if (existing != null)
+        {
+            throw new BadRequestException("A user with this email address already exists.");
+        }
+
+        var user = new AppUser
+        {
+            UserName = dto.Email.Trim(),
+            Email = dto.Email.Trim(),
+            FullName = dto.FullName.Trim(),
+            PhoneNumber = dto.PhoneNumber?.Trim(),
+            EmailConfirmed = true,
+            IsActive = true
+        };
+
+        var result = await _userManager.CreateAsync(user, dto.Password);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors.GroupBy(e => e.Code).ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+            throw new ValidationException(errors);
+        }
+
+        const string roleName = "Cashier";
+        if (!await _roleManager.RoleExistsAsync(roleName))
+        {
+            await _roleManager.CreateAsync(new AppRole(roleName));
+        }
+        await _userManager.AddToRoleAsync(user, roleName);
+
+        // Send invitation email with credentials and portal link
+        await _emailService.SendCashierInviteAsync(dto.Email.Trim(), dto.FullName.Trim(), dto.Password, portalUrl, ct);
+
+        return new UserDto
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            Roles = new List<string> { roleName }
+        };
+    }
+
+    public async Task<IReadOnlyList<UserDto>> GetCashiersAsync(CancellationToken ct = default)
+    {
+        var cashiers = await _userManager.GetUsersInRoleAsync("Cashier");
+        return cashiers.Select(u => new UserDto
+        {
+            Id = u.Id,
+            FullName = u.FullName,
+            Email = u.Email ?? string.Empty,
+            PhoneNumber = u.PhoneNumber,
+            Roles = new List<string> { "Cashier" }
+        }).ToList();
+    }
+
+    public async Task DeleteCashierAsync(string id, CancellationToken ct = default)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null)
+        {
+            throw new NotFoundException("User", id);
+        }
+
+        var isCashier = await _userManager.IsInRoleAsync(user, "Cashier");
+        if (!isCashier)
+        {
+            throw new BadRequestException("Only cashier accounts can be removed via this endpoint.");
+        }
+
+        await _userManager.DeleteAsync(user);
+    }
+
+    public async Task<UserDto> UpdateProfileAsync(string userId, UpdateProfileDto dto, CancellationToken ct = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            throw new NotFoundException("User", userId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.FullName))
+        {
+            user.FullName = dto.FullName.Trim();
+        }
+
+        user.PhoneNumber = dto.PhoneNumber?.Trim();
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors.GroupBy(e => e.Code).ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+            throw new ValidationException(errors);
+        }
+
+        var roles = await _userManager.GetRolesAsync(user);
+        return new UserDto
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email ?? string.Empty,
+            PhoneNumber = user.PhoneNumber,
+            Roles = roles
+        };
+    }
+
+    public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordDto dto, CancellationToken ct = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            throw new NotFoundException("User", userId);
+        }
+
+        var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors.GroupBy(e => e.Code).ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+            throw new ValidationException(errors);
+        }
+
+        return true;
     }
 
     public async Task<TokenResponseDto> LoginAsync(LoginDto dto, CancellationToken ct = default)
@@ -135,7 +338,7 @@ public class AuthService : IAuthService
     private async Task<TokenResponseDto> GenerateAuthResultAsync(AppUser user)
     {
         var roles = await _userManager.GetRolesAsync(user);
-        var jwtSecret = _configuration["Jwt:Secret"] ?? "SuperSecretKeyForRetailManagementSystemDev2026!Apex";
+        var jwtSecret = _configuration["Jwt:Secret"] ?? "SuperSecretKeyForRetailManagementSystemDev2026!ApexSecureKeyMustBe256BitsLong";
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var jti = Guid.NewGuid().ToString();
@@ -204,14 +407,14 @@ public class AuthService : IAuthService
 
     private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
     {
-        var jwtSecret = _configuration["Jwt:Secret"] ?? "SuperSecretKeyForRetailManagementSystemDev2026!Apex";
+        var jwtSecret = _configuration["Jwt:Secret"] ?? "SuperSecretKeyForRetailManagementSystemDev2026!ApexSecureKeyMustBe256BitsLong";
         var tokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = false,
             ValidateIssuer = false,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-            ValidateLifetime = false // Allow reading claims from expired token for refresh flow
+            ValidateLifetime = false
         };
 
         var tokenHandler = new JwtSecurityTokenHandler();

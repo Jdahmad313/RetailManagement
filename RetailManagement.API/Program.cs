@@ -16,6 +16,9 @@ using RetailManagement.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Ensure User Secrets are always loaded regardless of environment mode
+builder.Configuration.AddUserSecrets<Program>(optional: true);
+
 // 1. Database & EF Core
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Server=localhost;Database=RetailManagementDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;";
@@ -79,6 +82,8 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IPaymentGateway, MockPaymentGateway>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IOtpService, OtpService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
@@ -87,6 +92,8 @@ builder.Services.AddScoped<IPosService, PosService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IBusinessSettingsService, BusinessSettingsService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 
 // 6. Controllers & JSON Formatting
 builder.Services.AddControllers()
@@ -170,5 +177,4 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-app.Run();
+app.Run("http://localhost:5000");

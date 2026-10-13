@@ -22,6 +22,9 @@ public class BusinessProfileDto
     public bool AllowPickup { get; set; }
     public bool AllowDelivery { get; set; }
     public bool AllowNegativeStock { get; set; }
+    public string? WhatsAppNumber { get; set; }
+    public string EnabledPaymentMethodsJson { get; set; } = "[\"CashOnDelivery\",\"Card\",\"BankTransfer\"]";
+    public string? BankTransferInstructions { get; set; }
     public string OperatingHoursJson { get; set; } = string.Empty;
 }
 
@@ -46,5 +49,8 @@ public class UpdateBusinessProfileDto
     public bool AllowPickup { get; set; }
     public bool AllowDelivery { get; set; }
     public bool AllowNegativeStock { get; set; }
+    public string? WhatsAppNumber { get; set; }
+    public string EnabledPaymentMethodsJson { get; set; } = "[\"CashOnDelivery\",\"Card\",\"BankTransfer\"]";
+    public string? BankTransferInstructions { get; set; }
     public string OperatingHoursJson { get; set; } = string.Empty;
 }

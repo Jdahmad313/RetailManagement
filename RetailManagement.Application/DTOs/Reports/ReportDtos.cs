@@ -46,3 +46,45 @@ public class InventoryValuationDto
     public decimal TotalRetailValue { get; set; }
     public decimal PotentialProfit => TotalRetailValue - TotalCostValue;
 }
+
+public class ProductMonthlyBucketDto
+{
+    public int Month { get; set; } // 1 - 12
+    public string MonthName { get; set; } = string.Empty;
+    public int UnitsSold { get; set; }
+    public decimal Revenue { get; set; }
+    public decimal GrossProfit { get; set; }
+}
+
+public class ProductYearlyAnalyticsDto
+{
+    public Guid ProductId { get; set; }
+    public string SKU { get; set; } = string.Empty;
+    public string ProductName { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public int Year { get; set; }
+    public int TotalUnitsSold { get; set; }
+    public decimal TotalRevenue { get; set; }
+    public decimal TotalCost { get; set; }
+    public decimal TotalGrossProfit { get; set; }
+    public List<ProductMonthlyBucketDto> MonthlySales { get; set; } = new();
+}
+
+public class ProductAuditLogDto
+{
+    public Guid Id { get; set; }
+    public Guid ProductId { get; set; }
+    public string SKU { get; set; } = string.Empty;
+    public string ProductName { get; set; } = string.Empty;
+    public string ActionType { get; set; } = string.Empty;
+    public decimal? OldSellingPrice { get; set; }
+    public decimal? NewSellingPrice { get; set; }
+    public decimal? OldPurchaseCost { get; set; }
+    public decimal? NewPurchaseCost { get; set; }
+    public int? OldStock { get; set; }
+    public int? NewStock { get; set; }
+    public string ChangeSummary { get; set; } = string.Empty;
+    public string? ChangedByUserId { get; set; }
+    public string? ChangedByUserName { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+}

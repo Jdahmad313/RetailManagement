@@ -77,32 +77,42 @@ public static class DatabaseSeeder
             }
         }
 
-        // 5. Seed Business Profile
-        if (!await context.BusinessProfiles.AnyAsync())
+        // 5. Seed Business Profile (Pakistani Localization)
+        var existingProfile = await context.BusinessProfiles.FirstOrDefaultAsync();
+        if (existingProfile == null)
         {
             var profile = new BusinessProfile
             {
                 BusinessName = "Apex Retail & Supermarket",
                 Tagline = "Everyday Quality & Premium Essentials",
                 LogoUrl = "/assets/logo.png",
-                Address = "742 Evergreen Terrace, Springfield",
-                Phone = "+1 (555) 234-5678",
-                Email = "info@apexretail.local",
-                CurrencyCode = "USD",
-                CurrencySymbol = "$",
-                TimeZone = "UTC",
-                DefaultTaxRate = 8.50m,
+                Address = "Plot 14-C, Main Boulevard, Gulberg III, Lahore, Pakistan",
+                Phone = "+92 300 1234567",
+                Email = "info@apexretail.pk",
+                CurrencyCode = "PKR",
+                CurrencySymbol = "Rs.",
+                TimeZone = "Asia/Karachi",
+                DefaultTaxRate = 5.00m,
                 PricesIncludeTax = false,
                 InvoicePrefix = "INV-",
-                ReceiptHeader = "Apex Retail - Express Checkout",
-                ReceiptFooter = "Thank you for shopping at Apex Retail! Keep your receipt for 14-day hassle-free returns.",
-                DeliveryFee = 5.00m,
-                FreeDeliveryThreshold = 75.00m,
+                ReceiptHeader = "Apex Retail - Express Checkout (Lahore)",
+                ReceiptFooter = "Thank you for shopping at Apex Retail! 7-day hassle-free return policy with original receipt.",
+                DeliveryFee = 200.00m,
+                FreeDeliveryThreshold = 3000.00m,
                 AllowPickup = true,
                 AllowDelivery = true,
                 AllowNegativeStock = false
             };
             await context.BusinessProfiles.AddAsync(profile);
+            await context.SaveChangesAsync();
+        }
+        else if (existingProfile.CurrencyCode == "USD" || existingProfile.CurrencySymbol == "$")
+        {
+            existingProfile.CurrencyCode = "PKR";
+            existingProfile.CurrencySymbol = "Rs.";
+            existingProfile.Phone = "+92 300 1234567";
+            existingProfile.Address = "Plot 14-C, Main Boulevard, Gulberg III, Lahore, Pakistan";
+            existingProfile.Email = "info@apexretail.pk";
             await context.SaveChangesAsync();
         }
 
