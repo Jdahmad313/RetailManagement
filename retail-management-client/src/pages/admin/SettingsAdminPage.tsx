@@ -27,6 +27,9 @@ export const SettingsAdminPage: React.FC = () => {
   const [allowPickup, setAllowPickup] = useState(true);
   const [allowDelivery, setAllowDelivery] = useState(true);
   const [allowNegativeStock, setAllowNegativeStock] = useState(false);
+  const [whatsAppNumber, setWhatsAppNumber] = useState('');
+  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<string[]>(['CashOnDelivery', 'Card', 'BankTransfer']);
+  const [bankTransferInstructions, setBankTransferInstructions] = useState('');
 
   useEffect(() => {
     apiClient.get<ApiResponse<BusinessProfile>>('/businesssettings')
@@ -50,6 +53,13 @@ export const SettingsAdminPage: React.FC = () => {
           setAllowPickup(p.allowPickup);
           setAllowDelivery(p.allowDelivery);
           setAllowNegativeStock(p.allowNegativeStock);
+          setWhatsAppNumber(p.whatsAppNumber || '');
+          setBankTransferInstructions(p.bankTransferInstructions || '');
+          try {
+            if (p.enabledPaymentMethodsJson) {
+              setEnabledPaymentMethods(JSON.parse(p.enabledPaymentMethodsJson));
+            }
+          } catch {}
         }
       })
       .finally(() => setLoading(false));
@@ -80,6 +90,9 @@ export const SettingsAdminPage: React.FC = () => {
       allowPickup,
       allowDelivery,
       allowNegativeStock,
+      whatsAppNumber: whatsAppNumber.trim() || null,
+      enabledPaymentMethodsJson: JSON.stringify(enabledPaymentMethods),
+      bankTransferInstructions: bankTransferInstructions.trim() || null,
       operatingHoursJson: profile?.operatingHoursJson || '{}',
     };
 
@@ -176,6 +189,75 @@ export const SettingsAdminPage: React.FC = () => {
                 style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.25rem' }}
               />
             </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>WhatsApp Number (for floating button)</label>
+              <input
+                type="text"
+                value={whatsAppNumber}
+                onChange={(e) => setWhatsAppNumber(e.target.value)}
+                placeholder="+1 (555) 019-2834"
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.25rem' }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Gateways & Delivery Options */}
+        <div className="card">
+          <h3 style={{ fontSize: '1.0625rem', fontWeight: 700, marginBottom: '1rem' }}>Payment Methods for Online Checkout</h3>
+          <p style={{ fontSize: '0.8125rem', color: '#64748b', marginBottom: '1rem' }}>
+            Select which payment options are available to customers during online checkout:
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+              <input
+                type="checkbox"
+                checked={enabledPaymentMethods.includes('CashOnDelivery')}
+                onChange={(e) => {
+                  if (e.target.checked) setEnabledPaymentMethods([...enabledPaymentMethods, 'CashOnDelivery']);
+                  else setEnabledPaymentMethods(enabledPaymentMethods.filter((m) => m !== 'CashOnDelivery'));
+                }}
+              />
+              <strong>Cash on Delivery (COD)</strong>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+              <input
+                type="checkbox"
+                checked={enabledPaymentMethods.includes('Card')}
+                onChange={(e) => {
+                  if (e.target.checked) setEnabledPaymentMethods([...enabledPaymentMethods, 'Card']);
+                  else setEnabledPaymentMethods(enabledPaymentMethods.filter((m) => m !== 'Card'));
+                }}
+              />
+              <strong>Credit / Debit Card (Integrated Gateway)</strong>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+              <input
+                type="checkbox"
+                checked={enabledPaymentMethods.includes('BankTransfer')}
+                onChange={(e) => {
+                  if (e.target.checked) setEnabledPaymentMethods([...enabledPaymentMethods, 'BankTransfer']);
+                  else setEnabledPaymentMethods(enabledPaymentMethods.filter((m) => m !== 'BankTransfer'));
+                }}
+              />
+              <strong>Direct Bank Transfer / Wire</strong>
+            </label>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>
+              Bank Transfer Instructions & Account Details
+            </label>
+            <textarea
+              rows={2}
+              value={bankTransferInstructions}
+              onChange={(e) => setBankTransferInstructions(e.target.value)}
+              placeholder="e.g. Bank: Standard Chartered, Title: Apex Retail Ltd, IBAN/Account: PK00SCBL12345678901234"
+              style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.25rem', fontSize: '0.8125rem' }}
+            />
           </div>
         </div>
 

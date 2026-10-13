@@ -113,7 +113,7 @@ export const CatalogPage: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '2rem', alignItems: 'start' }}>
+      <div className="catalog-layout" style={{ gap: '2rem', alignItems: 'start' }}>
         {/* Filters Sidebar */}
         <aside className="card" style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
@@ -185,7 +185,7 @@ export const CatalogPage: React.FC = () => {
           {/* Price Range */}
           <div style={{ marginBottom: '1.25rem' }}>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-              Price Range ($)
+              Price Range (Rs.)
             </label>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
@@ -285,11 +285,11 @@ export const CatalogPage: React.FC = () => {
                     <div style={{ marginTop: 'auto', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <span style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#0f172a' }}>
-                          ${p.effectivePrice.toFixed(2)}
+                          Rs. {p.effectivePrice.toFixed(2)}
                         </span>
                         {p.discountPrice && (
                           <span style={{ fontSize: '0.75rem', color: '#94a3b8', textDecoration: 'line-through', marginLeft: '0.375rem' }}>
-                            ${p.sellingPrice.toFixed(2)}
+                            Rs. {p.sellingPrice.toFixed(2)}
                           </span>
                         )}
                       </div>

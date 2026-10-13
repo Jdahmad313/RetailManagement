@@ -9,8 +9,12 @@ interface AuthContextType {
   isAdmin: boolean;
   isCashier: boolean;
   isManager: boolean;
-  login: (email: string, pass: string) => Promise<void>;
-  register: (fullName: string, email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string) => Promise<User>;
+  initiateRegisterOtp: (fullName: string, email: string, pass: string, phone?: string) => Promise<string>;
+  verifyRegisterOtp: (target: string, otpCode: string) => Promise<User>;
+  resendRegisterOtp: (target: string) => Promise<boolean>;
+  updateProfile: (fullName: string, phoneNumber?: string) => Promise<User>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   logout: () => Promise<void>;
 }
 
@@ -33,12 +37,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         })
         .catch(() => {
-          // Token invalid
+          // Token invalid or expired
+          logout();
         });
     }
   }, [token]);
 
-  const login = async (email: string, pass: string) => {
+  const login = async (email: string, pass: string): Promise<User> => {
+    // Clear any previous stale sessions before logging in
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+
     const res = await apiClient.post<ApiResponse<TokenResponse>>('/auth/login', {
       email,
       password: pass,
@@ -50,15 +60,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(loggedUser));
       setToken(accessToken);
       setUser(loggedUser);
+      return loggedUser;
     }
+    throw new Error(res.data.message || 'Login failed.');
   };
 
-  const register = async (fullName: string, email: string, pass: string) => {
-    const res = await apiClient.post<ApiResponse<TokenResponse>>('/auth/register', {
+  const initiateRegisterOtp = async (fullName: string, email: string, pass: string, phone?: string): Promise<string> => {
+    const res = await apiClient.post<ApiResponse<{ target: string }>>('/auth/register-initiate', {
       fullName,
       email,
       password: pass,
-      role: 'Customer',
+      phoneNumber: phone || null,
+    });
+    if (res.data.success && res.data.data) {
+      return res.data.data.target;
+    }
+    throw new Error(res.data.message || 'Failed to initiate OTP verification.');
+  };
+
+  const verifyRegisterOtp = async (target: string, otpCode: string): Promise<User> => {
+    const res = await apiClient.post<ApiResponse<TokenResponse>>('/auth/verify-otp', {
+      target,
+      otpCode,
     });
     if (res.data.success && res.data.data) {
       const { accessToken, refreshToken, user: loggedUser } = res.data.data;
@@ -67,7 +90,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(loggedUser));
       setToken(accessToken);
       setUser(loggedUser);
+      return loggedUser;
     }
+    throw new Error(res.data.message || 'Invalid or expired OTP code.');
+  };
+
+  const resendRegisterOtp = async (target: string): Promise<boolean> => {
+    const res = await apiClient.post<ApiResponse<boolean>>('/auth/resend-otp', { target });
+    return res.data.success;
+  };
+
+  const updateProfile = async (fullName: string, phoneNumber?: string): Promise<User> => {
+    const res = await apiClient.put<ApiResponse<User>>('/auth/profile', {
+      fullName,
+      phoneNumber: phoneNumber || null,
+    });
+    if (res.data.success && res.data.data) {
+      setUser(res.data.data);
+      localStorage.setItem('user', JSON.stringify(res.data.data));
+      return res.data.data;
+    }
+    throw new Error(res.data.message || 'Failed to update profile.');
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
+    const res = await apiClient.post<ApiResponse<boolean>>('/auth/change-password', {
+      currentPassword,
+      newPassword,
+    });
+    if (res.data.success) {
+      return true;
+    }
+    throw new Error(res.data.message || 'Failed to change password.');
   };
 
   const logout = async () => {
@@ -96,12 +150,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         token,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!token,
         isAdmin,
         isCashier,
         isManager,
         login,
-        register,
+        initiateRegisterOtp,
+        verifyRegisterOtp,
+        resendRegisterOtp,
+        updateProfile,
+        changePassword,
         logout,
       }}
     >

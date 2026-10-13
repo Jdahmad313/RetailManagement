@@ -1,28 +1,70 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ShoppingBag, ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react';
-import { Product, ApiResponse } from '../../types';
+import { ShoppingBag, ArrowLeft, CheckCircle, AlertTriangle, Star, MessageSquare, Send } from 'lucide-react';
+import { Product, ProductReview, ApiResponse } from '../../types';
 import { apiClient } from '../../api/client';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
+  const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState(false);
-  const { addToCart } = useCart();
 
-  useEffect(() => {
+  // Review form state
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+
+  const [currencySymbol, setCurrencySymbol] = useState('Rs.');
+  const { addToCart } = useCart();
+  const { user, isAuthenticated } = useAuth();
+
+  const fetchProductAndReviews = async () => {
     if (!id) return;
     setLoading(true);
-    apiClient.get<ApiResponse<Product>>(`/products/${id}`)
+
+    // 1. Fetch product first
+    try {
+      const prodRes = await apiClient.get<ApiResponse<Product>>(`/products/${id}`);
+      if (prodRes.data?.success && prodRes.data.data) {
+        setProduct(prodRes.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to load product details:', err);
+    } finally {
+      setLoading(false);
+    }
+
+    // 2. Fetch business profile for currency symbol
+    apiClient.get<ApiResponse<any>>('/businesssettings')
       .then((res) => {
-        if (res.data.success) {
-          setProduct(res.data.data);
+        if (res.data?.success && res.data.data?.currencySymbol) {
+          setCurrencySymbol(res.data.data.currencySymbol);
         }
       })
-      .finally(() => setLoading(false));
+      .catch(() => {});
+
+    // 3. Resiliently fetch reviews in background without blocking product view
+    try {
+      const revRes = await apiClient.get<ApiResponse<ProductReview[]>>(`/products/${id}/reviews`);
+      if (revRes.data?.success && revRes.data.data) {
+        setReviews(revRes.data.data);
+      }
+    } catch (err) {
+      console.warn('Reviews could not be loaded:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchProductAndReviews();
   }, [id]);
 
   if (loading) {
@@ -40,15 +82,54 @@ export const ProductDetailPage: React.FC = () => {
     );
   }
 
-  const attributes: Record<string, string> = product.attributesJson
-    ? JSON.parse(product.attributesJson)
-    : {};
+  let attributes: Record<string, string> = {};
+  if (product.attributesJson) {
+    try {
+      attributes = JSON.parse(product.attributesJson);
+    } catch {
+      attributes = {};
+    }
+  }
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !comment.trim()) return;
+    setSubmittingReview(true);
+    setReviewError(null);
+    try {
+      const authorName = (isAuthenticated ? user?.fullName : guestName.trim()) || 'Valued Customer';
+      const authorEmail = (isAuthenticated ? user?.email : guestEmail.trim()) || 'customer@store.local';
+
+      const res = await apiClient.post<ApiResponse<ProductReview>>(
+        `/products/${id}/reviews?guestName=${encodeURIComponent(authorName)}&guestEmail=${encodeURIComponent(authorEmail)}`,
+        {
+          rating,
+          comment: comment.trim(),
+        }
+      );
+
+      if (res.data.success) {
+        setReviewSuccess(true);
+        setComment('');
+        fetchProductAndReviews();
+        setTimeout(() => setReviewSuccess(false), 3000);
+      }
+    } catch (err: any) {
+      setReviewError(err.response?.data?.message || 'Failed to submit review.');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const averageRating = reviews.length > 0
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+    : (product.averageRating || 5.0).toFixed(1);
 
   return (
     <div className="container" style={{ padding: '2rem 1.5rem' }}>
@@ -71,17 +152,32 @@ export const ProductDetailPage: React.FC = () => {
           <div style={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>
             {product.categoryName} {product.brand && `• ${product.brand}`}
           </div>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2, marginBottom: '1rem' }}>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2, marginBottom: '0.5rem' }}>
             {product.name}
           </h1>
 
+          {/* Review Stars Summary */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', color: '#eab308' }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  size={16}
+                  fill={star <= Math.round(Number(averageRating)) ? '#eab308' : 'none'}
+                />
+              ))}
+            </div>
+            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>{averageRating}</span>
+            <span style={{ fontSize: '0.8125rem', color: '#64748b' }}>({reviews.length} customer reviews)</span>
+          </div>
+
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem', marginBottom: '1.5rem' }}>
             <span style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a' }}>
-              ${product.effectivePrice.toFixed(2)}
+              {currencySymbol} {product.effectivePrice.toFixed(2)}
             </span>
             {product.discountPrice && (
               <span style={{ fontSize: '1.25rem', color: '#94a3b8', textDecoration: 'line-through' }}>
-                ${product.sellingPrice.toFixed(2)}
+                {currencySymbol} {product.sellingPrice.toFixed(2)}
               </span>
             )}
             <span style={{ fontSize: '0.875rem', color: '#64748b' }}>/ {product.unit}</span>
@@ -154,6 +250,143 @@ export const ProductDetailPage: React.FC = () => {
               <ShoppingBag size={18} />
               {added ? 'Added to Cart!' : 'Add to Cart'}
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Customer Reviews Section */}
+      <div style={{ marginTop: '3rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+          <MessageSquare size={22} color="#2563eb" />
+          <h2 style={{ fontSize: '1.375rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+            Customer Reviews & Ratings
+          </h2>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+          {/* Write a review form */}
+          <div className="card">
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1rem', color: '#0f172a' }}>
+              Leave a Review
+            </h3>
+
+            {reviewSuccess && (
+              <div style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '0.75rem', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.8125rem' }}>
+                ✓ Thank you! Your review has been added.
+              </div>
+            )}
+            {reviewError && (
+              <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '0.75rem', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.8125rem' }}>
+                {reviewError}
+              </div>
+            )}
+
+            <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.35rem', color: '#475569' }}>
+                  Rating
+                </label>
+                <div style={{ display: 'flex', gap: '0.35rem' }}>
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button
+                      type="button"
+                      key={s}
+                      onClick={() => setRating(s)}
+                      style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#eab308' }}
+                    >
+                      <Star size={24} fill={s <= rating ? '#eab308' : 'none'} />
+                    </button>
+                  ))}
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, marginLeft: '0.5rem', color: '#334155' }}>
+                    {rating} / 5 Stars
+                  </span>
+                </div>
+              </div>
+
+              {!isAuthenticated && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Your Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      placeholder="Jane Doe"
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontSize: '0.8125rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Email Address *</label>
+                    <input
+                      type="email"
+                      required
+                      value={guestEmail}
+                      onChange={(e) => setGuestEmail(e.target.value)}
+                      placeholder="jane@example.com"
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontSize: '0.8125rem' }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem', color: '#475569' }}>
+                  Your Feedback & Experience *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Tell other shoppers how this product performed..."
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontSize: '0.8125rem', resize: 'vertical' }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submittingReview}
+                className="btn btn-primary"
+                style={{ alignSelf: 'flex-start', padding: '0.5rem 1.25rem', gap: '0.35rem' }}
+              >
+                <Send size={15} /> {submittingReview ? 'Submitting...' : 'Post Review'}
+              </button>
+            </form>
+          </div>
+
+          {/* List of Reviews */}
+          <div className="card">
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1rem', color: '#0f172a' }}>
+              Shopper Feedback ({reviews.length})
+            </h3>
+
+            {reviews.length === 0 ? (
+              <p style={{ color: '#64748b', fontSize: '0.875rem', fontStyle: 'italic' }}>
+                No reviews yet. Be the first to review this product!
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: 380, overflowY: 'auto' }}>
+                {reviews.map((r) => (
+                  <div key={r.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.875rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#0f172a' }}>{r.customerName}</span>
+                      <div style={{ display: 'flex', color: '#eab308' }}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} size={13} fill={star <= r.rating ? '#eab308' : 'none'} />
+                        ))}
+                      </div>
+                    </div>
+                    <p style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5, margin: 0 }}>
+                      {r.comment}
+                    </p>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>
+                      {new Date(r.createdAtUtc).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

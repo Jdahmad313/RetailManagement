@@ -113,15 +113,17 @@ input, select, textarea {
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
-/* Print styles for thermal receipts */
+/* Print styles for thermal receipts and invoices */
 @media print {
   body * {
     visibility: hidden;
   }
-  #printable-receipt, #printable-receipt * {
+  #printable-receipt, #printable-receipt *,
+  #printable-cashier-receipt, #printable-cashier-receipt *,
+  #customer-printable-invoice, #customer-printable-invoice * {
     visibility: visible;
   }
-  #printable-receipt {
+  #printable-receipt, #printable-cashier-receipt {
     position: absolute;
     left: 0;
     top: 0;
@@ -130,4 +132,82 @@ input, select, textarea {
     padding: 10px;
     font-size: 12px;
   }
+  #customer-printable-invoice {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
 }
+
+/* Responsive media queries */
+@media (max-width: 768px) {
+  .desktop-search,
+  .desktop-nav {
+    display: none !important;
+  }
+  .mobile-actions {
+    display: flex !important;
+  }
+  .container {
+    padding: 0 1rem;
+  }
+}
+
+/* Responsive Layout Utilities */
+.catalog-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  align-items: start;
+}
+
+.cart-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  align-items: start;
+}
+
+.checkout-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  align-items: start;
+}
+
+.pos-container {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  height: calc(100vh - 90px);
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 992px) {
+  .pos-container {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+  }
+}
+
+@media (max-width: 850px) {
+  .cart-layout-grid,
+  .checkout-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .catalog-layout {
+    grid-template-columns: 1fr !important;
+  }
+  .card {
+    padding: 1rem !important;
+  }
+}
+

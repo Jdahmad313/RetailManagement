@@ -23,5 +23,8 @@ public class BusinessProfile : AuditableEntity
     public bool AllowPickup { get; set; } = true;
     public bool AllowDelivery { get; set; } = true;
     public bool AllowNegativeStock { get; set; } = false;
+    public string? WhatsAppNumber { get; set; } = "+1 (555) 019-2834";
+    public string EnabledPaymentMethodsJson { get; set; } = "[\"CashOnDelivery\",\"Card\",\"BankTransfer\"]";
+    public string? BankTransferInstructions { get; set; } = "Bank: Standard Chartered, Title: Apex Retail Ltd, IBAN/Account: PK00SCBL12345678901234";
     public string OperatingHoursJson { get; set; } = "{\"Mon\":\"09:00 - 20:00\",\"Tue\":\"09:00 - 20:00\",\"Wed\":\"09:00 - 20:00\",\"Thu\":\"09:00 - 20:00\",\"Fri\":\"09:00 - 21:00\",\"Sat\":\"10:00 - 21:00\",\"Sun\":\"11:00 - 18:00\"}";
 }

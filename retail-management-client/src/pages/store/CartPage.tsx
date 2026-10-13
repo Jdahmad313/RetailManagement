@@ -1,13 +1,33 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { apiClient } from '../../api/client';
+import { ApiResponse, BusinessProfile } from '../../types';
 
 export const CartPage: React.FC = () => {
   const { items, updateQuantity, removeFromCart, clearCart, subTotal, itemCount } = useCart();
+  const [profile, setProfile] = useState<BusinessProfile | null>(null);
 
-  const freeDeliveryThreshold = 75;
+  useEffect(() => {
+    apiClient.get<ApiResponse<BusinessProfile>>('/businesssettings')
+      .then((res) => {
+        if (res.data?.success && res.data.data) {
+          setProfile(res.data.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const currencySymbol = profile?.currencySymbol || 'Rs.';
+  const freeDeliveryThreshold = profile?.freeDeliveryThreshold ?? 3000;
+  const deliveryFeeRate = profile?.deliveryFee ?? 200;
+  const taxRate = profile?.defaultTaxRate ?? 5;
+
   const remainingForFreeShipping = Math.max(0, freeDeliveryThreshold - subTotal);
+  const deliveryFee = subTotal >= freeDeliveryThreshold ? 0 : deliveryFeeRate;
+  const estimatedTax = subTotal * (taxRate / 100);
+  const estimatedTotal = subTotal + estimatedTax + deliveryFee;
 
   if (items.length === 0) {
     return (
@@ -34,7 +54,7 @@ export const CartPage: React.FC = () => {
       <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '0.5rem', padding: '0.875rem 1.25rem', marginBottom: '2rem' }}>
         {remainingForFreeShipping > 0 ? (
           <div style={{ fontSize: '0.875rem', color: '#1e40af' }}>
-            Add <strong>${remainingForFreeShipping.toFixed(2)}</strong> more of items to qualify for <strong>FREE Delivery</strong>!
+            Add <strong>{currencySymbol} {remainingForFreeShipping.toFixed(2)}</strong> more of items to qualify for <strong>FREE Delivery</strong>!
           </div>
         ) : (
           <div style={{ fontSize: '0.875rem', color: '#16a34a', fontWeight: 600 }}>
@@ -43,79 +63,83 @@ export const CartPage: React.FC = () => {
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem', alignItems: 'start' }}>
+      <div className="cart-layout-grid" style={{ gap: '2rem', alignItems: 'start' }}>
         {/* Cart Items Table */}
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-            <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-              <tr>
-                <th style={{ padding: '0.875rem 1.25rem' }}>Product</th>
-                <th style={{ padding: '0.875rem 1rem' }}>Price</th>
-                <th style={{ padding: '0.875rem 1rem' }}>Quantity</th>
-                <th style={{ padding: '0.875rem 1rem' }}>Total</th>
-                <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => {
-                const price = item.variant?.priceOverride ?? item.product.effectivePrice;
-                const lineTotal = price * item.quantity;
-                return (
-                  <tr key={`${item.product.id}-${item.variant?.id}`} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <img
-                        src={item.product.imageUrl || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100'}
-                        alt={item.product.name}
-                        style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: '0.375rem', border: '1px solid #e2e8f0' }}
-                      />
-                      <div>
-                        <Link to={`/product/${item.product.id}`} style={{ fontWeight: 600, color: '#0f172a' }}>
-                          {item.product.name}
-                        </Link>
-                        {item.variant && (
-                          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Variant: {item.variant.name}</div>
-                        )}
-                        <div style={{ fontSize: '0.6875rem', color: '#94a3b8', fontFamily: 'monospace' }}>SKU: {item.product.sku}</div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '1rem' }}>${price.toFixed(2)}</td>
-                    <td style={{ padding: '1rem' }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '0.375rem' }}>
+          <div style={{ overflowX: 'auto', width: '100%' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem', minWidth: 500 }}>
+              <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                <tr>
+                  <th style={{ padding: '0.875rem 1.25rem' }}>Product</th>
+                  <th style={{ padding: '0.875rem 1rem' }}>Price</th>
+                  <th style={{ padding: '0.875rem 1rem' }}>Quantity</th>
+                  <th style={{ padding: '0.875rem 1rem' }}>Total</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => {
+                  const price = item.variant?.priceOverride ?? item.product.effectivePrice;
+                  const lineTotal = price * item.quantity;
+                  return (
+                    <tr key={`${item.product.id}-${item.variant?.id}`} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <img
+                          src={item.product.imageUrl || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100'}
+                          alt={item.product.name}
+                          style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: '0.375rem', border: '1px solid #e2e8f0' }}
+                        />
+                        <div>
+                          <Link to={`/product/${item.product.id}`} style={{ fontWeight: 600, color: '#0f172a' }}>
+                            {item.product.name}
+                          </Link>
+                          {item.variant && (
+                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Variant: {item.variant.name}</div>
+                          )}
+                          <div style={{ fontSize: '0.6875rem', color: '#94a3b8', fontFamily: 'monospace' }}>SKU: {item.product.sku}</div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>{currencySymbol} {price.toFixed(2)}</td>
+                      <td style={{ padding: '1rem' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '0.375rem' }}>
+                          <button
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variant?.id)}
+                            style={{ padding: '0.25rem 0.5rem', fontWeight: 700 }}
+                          >
+                            -
+                          </button>
+                          <span style={{ padding: '0 0.5rem', minWidth: 24, textAlign: 'center', fontSize: '0.8125rem' }}>
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variant?.id)}
+                            style={{ padding: '0.25rem 0.5rem', fontWeight: 700 }}
+                            disabled={item.quantity >= item.product.stockQuantity}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </td>
+                      <td style={{ padding: '1rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                        {currencySymbol} {lineTotal.toFixed(2)}
+                      </td>
+                      <td style={{ padding: '1rem', textAlign: 'right' }}>
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variant?.id)}
-                          style={{ padding: '0.25rem 0.5rem', fontWeight: 700 }}
+                          onClick={() => removeFromCart(item.product.id, item.variant?.id)}
+                          style={{ color: '#ef4444', padding: '0.25rem' }}
+                          title="Remove"
                         >
-                          -
+                          <Trash2 size={16} />
                         </button>
-                        <span style={{ padding: '0 0.5rem', minWidth: 24, textAlign: 'center', fontSize: '0.8125rem' }}>
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variant?.id)}
-                          style={{ padding: '0.25rem 0.5rem', fontWeight: 700 }}
-                          disabled={item.quantity >= item.product.stockQuantity}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </td>
-                    <td style={{ padding: '1rem', fontWeight: 700, color: '#0f172a' }}>${lineTotal.toFixed(2)}</td>
-                    <td style={{ padding: '1rem', textAlign: 'right' }}>
-                      <button
-                        onClick={() => removeFromCart(item.product.id, item.variant?.id)}
-                        style={{ color: '#ef4444', padding: '0.25rem' }}
-                        title="Remove"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-          <div style={{ padding: '1rem 1.25rem', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: '1rem 1.25rem', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
             <button onClick={clearCart} className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}>
               Clear Cart
             </button>
@@ -130,11 +154,11 @@ export const CartPage: React.FC = () => {
           <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1.25rem', color: '#0f172a' }}>Order Summary</h3>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.875rem' }}>
             <span style={{ color: '#64748b' }}>Subtotal</span>
-            <span style={{ fontWeight: 600 }}>${subTotal.toFixed(2)}</span>
+            <span style={{ fontWeight: 600 }}>{currencySymbol} {subTotal.toFixed(2)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.875rem' }}>
-            <span style={{ color: '#64748b' }}>Estimated Tax (8.5%)</span>
-            <span style={{ fontWeight: 600 }}>${(subTotal * 0.085).toFixed(2)}</span>
+            <span style={{ color: '#64748b' }}>Estimated Tax ({taxRate}%)</span>
+            <span style={{ fontWeight: 600 }}>{currencySymbol} {estimatedTax.toFixed(2)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem', fontSize: '0.875rem' }}>
             <span style={{ color: '#64748b' }}>Delivery Fee</span>
@@ -142,7 +166,7 @@ export const CartPage: React.FC = () => {
               {subTotal >= freeDeliveryThreshold ? (
                 <span style={{ color: '#16a34a' }}>FREE</span>
               ) : (
-                '$5.00'
+                `${currencySymbol} ${deliveryFee.toFixed(2)}`
               )}
             </span>
           </div>
@@ -150,7 +174,7 @@ export const CartPage: React.FC = () => {
           <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <span style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Estimated Total</span>
             <span style={{ fontSize: '1.375rem', fontWeight: 800, color: '#0f172a' }}>
-              ${(subTotal + subTotal * 0.085 + (subTotal >= freeDeliveryThreshold ? 0 : 5)).toFixed(2)}
+              {currencySymbol} {estimatedTotal.toFixed(2)}
             </span>
           </div>
 

@@ -42,6 +42,7 @@ public class PosService : IPosService
             var productIds = dto.Items.Select(i => i.ProductId).Distinct().ToList();
             var products = await _unitOfWork.Repository<Product>()
                 .Query()
+                .Include(p => p.Category)
                 .Include(p => p.Variants)
                 .Where(p => productIds.Contains(p.Id))
                 .ToListAsync(ct);
@@ -183,6 +184,49 @@ public class PosService : IPosService
             }
 
             await _unitOfWork.Repository<PosSale>().AddAsync(posSale, ct);
+
+            // Upsert ProductMonthlySales for each POS item sold
+            var currentYear = DateTime.UtcNow.Year;
+            var currentMonth = DateTime.UtcNow.Month;
+            foreach (var item in saleItems)
+            {
+                var monthlyRecord = await _unitOfWork.Repository<ProductMonthlySales>()
+                    .Query()
+                    .FirstOrDefaultAsync(s => s.ProductId == item.ProductId && s.Year == currentYear && s.Month == currentMonth, ct);
+
+                var product = productMap[item.ProductId];
+                var catName = product.Category?.Name ?? "General";
+                var lineCost = item.UnitCost * item.Quantity;
+                var lineProfit = item.SubTotal - lineCost;
+
+                if (monthlyRecord == null)
+                {
+                    monthlyRecord = new ProductMonthlySales
+                    {
+                        ProductId = item.ProductId,
+                        SKU = item.SKU,
+                        ProductName = item.ProductName,
+                        CategoryName = catName,
+                        Year = currentYear,
+                        Month = currentMonth,
+                        UnitsSold = item.Quantity,
+                        TotalRevenue = item.SubTotal,
+                        TotalCost = lineCost,
+                        GrossProfit = lineProfit,
+                        LastSaleDateUtc = DateTime.UtcNow
+                    };
+                    await _unitOfWork.Repository<ProductMonthlySales>().AddAsync(monthlyRecord, ct);
+                }
+                else
+                {
+                    monthlyRecord.UnitsSold += item.Quantity;
+                    monthlyRecord.TotalRevenue += item.SubTotal;
+                    monthlyRecord.TotalCost += lineCost;
+                    monthlyRecord.GrossProfit += lineProfit;
+                    monthlyRecord.LastSaleDateUtc = DateTime.UtcNow;
+                    _unitOfWork.Repository<ProductMonthlySales>().Update(monthlyRecord);
+                }
+            }
 
             foreach (var m in movements)
             {

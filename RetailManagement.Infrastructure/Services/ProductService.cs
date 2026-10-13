@@ -24,6 +24,7 @@ public class ProductService : IProductService
             .Query()
             .Include(p => p.Category)
             .Include(p => p.Variants)
+            .Include(p => p.Reviews)
             .AsNoTracking();
 
         if (filter.IsActive.HasValue)
@@ -93,6 +94,7 @@ public class ProductService : IProductService
             .Query()
             .Include(p => p.Category)
             .Include(p => p.Variants)
+            .Include(p => p.Reviews)
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == id, ct);
 
@@ -110,6 +112,7 @@ public class ProductService : IProductService
             .Query()
             .Include(p => p.Category)
             .Include(p => p.Variants)
+            .Include(p => p.Reviews)
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.SKU == sku, ct);
 
@@ -127,6 +130,7 @@ public class ProductService : IProductService
             .Query()
             .Include(p => p.Category)
             .Include(p => p.Variants)
+            .Include(p => p.Reviews)
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Barcode == barcode, ct);
 
@@ -214,6 +218,22 @@ public class ProductService : IProductService
             await _unitOfWork.Repository<InventoryMovement>().AddAsync(movement, ct);
         }
 
+        // Record Product Audit Log
+        var createAudit = new ProductAuditLog
+        {
+            ProductId = product.Id,
+            SKU = product.SKU,
+            ProductName = product.Name,
+            ActionType = "Created",
+            NewSellingPrice = product.SellingPrice,
+            NewPurchaseCost = product.PurchaseCost,
+            NewStock = product.StockQuantity,
+            ChangeSummary = $"Product '{product.Name}' added to catalog with price Rs. {product.SellingPrice:N2}",
+            ChangedByUserName = "Store Admin",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+        await _unitOfWork.Repository<ProductAuditLog>().AddAsync(createAudit, ct);
+
         await _unitOfWork.SaveChangesAsync(ct);
 
         return await GetByIdAsync(product.Id, ct);
@@ -240,6 +260,19 @@ public class ProductService : IProductService
             throw new BadRequestException($"SKU '{dto.SKU}' is already used by another product.");
         }
 
+        var oldPrice = product.SellingPrice;
+        var oldCost = product.PurchaseCost;
+        var oldStock = product.StockQuantity;
+        var priceChanged = oldPrice != dto.SellingPrice;
+        var costChanged = oldCost != dto.PurchaseCost;
+
+        var changeSummaryList = new List<string>();
+        if (priceChanged) changeSummaryList.Add($"Selling price: Rs. {oldPrice:N2} -> Rs. {dto.SellingPrice:N2}");
+        if (costChanged) changeSummaryList.Add($"Purchase cost: Rs. {oldCost:N2} -> Rs. {dto.PurchaseCost:N2}");
+        if (!string.Equals(product.Name, dto.Name, StringComparison.OrdinalIgnoreCase)) changeSummaryList.Add($"Name updated to '{dto.Name}'");
+        if (product.IsActive != dto.IsActive) changeSummaryList.Add(dto.IsActive ? "Activated" : "Deactivated");
+        if (!changeSummaryList.Any()) changeSummaryList.Add("Product details and specifications updated");
+
         product.SKU = dto.SKU.Trim();
         product.Barcode = string.IsNullOrWhiteSpace(dto.Barcode) ? null : dto.Barcode.Trim();
         product.Name = dto.Name.Trim();
@@ -259,6 +292,26 @@ public class ProductService : IProductService
         product.IsFeatured = dto.IsFeatured;
 
         _unitOfWork.Repository<Product>().Update(product);
+
+        // Record Audit Entry
+        var updateAudit = new ProductAuditLog
+        {
+            ProductId = product.Id,
+            SKU = product.SKU,
+            ProductName = product.Name,
+            ActionType = priceChanged ? "PriceUpdated" : (costChanged ? "CostUpdated" : "InfoUpdated"),
+            OldSellingPrice = oldPrice,
+            NewSellingPrice = dto.SellingPrice,
+            OldPurchaseCost = oldCost,
+            NewPurchaseCost = dto.PurchaseCost,
+            OldStock = oldStock,
+            NewStock = oldStock,
+            ChangeSummary = string.Join("; ", changeSummaryList),
+            ChangedByUserName = "Store Admin",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+        await _unitOfWork.Repository<ProductAuditLog>().AddAsync(updateAudit, ct);
+
         await _unitOfWork.SaveChangesAsync(ct);
 
         return await GetByIdAsync(product.Id, ct);
@@ -300,6 +353,10 @@ public class ProductService : IProductService
             AttributesJson = p.AttributesJson,
             IsActive = p.IsActive,
             IsFeatured = p.IsFeatured,
+            AverageRating = p.Reviews != null && p.Reviews.Any(r => r.IsApproved) 
+                ? Math.Round(p.Reviews.Where(r => r.IsApproved).Average(r => r.Rating), 1) 
+                : 5.0,
+            ReviewCount = p.Reviews != null ? p.Reviews.Count(r => r.IsApproved) : 0,
             CreatedAtUtc = p.CreatedAtUtc,
             Variants = p.Variants.Select(v => new ProductVariantDto
             {

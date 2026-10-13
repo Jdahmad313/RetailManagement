@@ -15,11 +15,13 @@ public class OrderService : IOrderService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPaymentGateway _paymentGateway;
+    private readonly IEmailService _emailService;
 
-    public OrderService(IUnitOfWork unitOfWork, IPaymentGateway paymentGateway)
+    public OrderService(IUnitOfWork unitOfWork, IPaymentGateway paymentGateway, IEmailService emailService)
     {
         _unitOfWork = unitOfWork;
         _paymentGateway = paymentGateway;
+        _emailService = emailService;
     }
 
     public async Task<OrderDto> CreateOrderAsync(CreateOrderDto dto, string? userId, CancellationToken ct = default)
@@ -48,6 +50,7 @@ public class OrderService : IOrderService
             var productIds = dto.Items.Select(i => i.ProductId).Distinct().ToList();
             var products = await _unitOfWork.Repository<Product>()
                 .Query()
+                .Include(p => p.Category)
                 .Include(p => p.Variants)
                 .Where(p => productIds.Contains(p.Id))
                 .ToListAsync(ct);
@@ -165,6 +168,49 @@ public class OrderService : IOrderService
 
             await _unitOfWork.Repository<Order>().AddAsync(order, ct);
 
+            // Upsert ProductMonthlySales for each ordered item
+            var currentYear = DateTime.UtcNow.Year;
+            var currentMonth = DateTime.UtcNow.Month;
+            foreach (var item in orderItems)
+            {
+                var monthlyRecord = await _unitOfWork.Repository<ProductMonthlySales>()
+                    .Query()
+                    .FirstOrDefaultAsync(s => s.ProductId == item.ProductId && s.Year == currentYear && s.Month == currentMonth, ct);
+
+                var product = productMap[item.ProductId];
+                var catName = product.Category?.Name ?? "General";
+                var lineCost = item.UnitCost * item.Quantity;
+                var lineProfit = item.SubTotal - lineCost;
+
+                if (monthlyRecord == null)
+                {
+                    monthlyRecord = new ProductMonthlySales
+                    {
+                        ProductId = item.ProductId,
+                        SKU = item.SKU,
+                        ProductName = item.ProductName,
+                        CategoryName = catName,
+                        Year = currentYear,
+                        Month = currentMonth,
+                        UnitsSold = item.Quantity,
+                        TotalRevenue = item.SubTotal,
+                        TotalCost = lineCost,
+                        GrossProfit = lineProfit,
+                        LastSaleDateUtc = DateTime.UtcNow
+                    };
+                    await _unitOfWork.Repository<ProductMonthlySales>().AddAsync(monthlyRecord, ct);
+                }
+                else
+                {
+                    monthlyRecord.UnitsSold += item.Quantity;
+                    monthlyRecord.TotalRevenue += item.SubTotal;
+                    monthlyRecord.TotalCost += lineCost;
+                    monthlyRecord.GrossProfit += lineProfit;
+                    monthlyRecord.LastSaleDateUtc = DateTime.UtcNow;
+                    _unitOfWork.Repository<ProductMonthlySales>().Update(monthlyRecord);
+                }
+            }
+
             // Process payment through payment abstraction
             if (dto.PaymentMethod == PaymentMethodType.Card || dto.PaymentMethod == PaymentMethodType.BankTransfer)
             {
@@ -202,7 +248,17 @@ public class OrderService : IOrderService
             await _unitOfWork.SaveChangesAsync(ct);
             await _unitOfWork.CommitTransactionAsync(ct);
 
-            return await GetByIdAsync(order.Id, ct);
+            var orderDto = await GetByIdAsync(order.Id, ct);
+            try
+            {
+                _ = Task.Run(async () => await _emailService.SendOrderInvoiceAsync(orderDto, profile, CancellationToken.None));
+            }
+            catch
+            {
+                // Never block checkout on background email failures
+            }
+
+            return orderDto;
         }
         catch
         {
@@ -277,6 +333,41 @@ public class OrderService : IOrderService
                 o.OrderNumber.ToLower().Contains(search) ||
                 o.CustomerName.ToLower().Contains(search) ||
                 o.CustomerEmail.ToLower().Contains(search));
+        }
+
+        var totalCount = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderByDescending(o => o.CreatedAtUtc)
+            .Skip((filter.PageNumber - 1) * filter.PageSize)
+            .Take(filter.PageSize)
+            .Select(o => MapToDto(o))
+            .ToListAsync(ct);
+
+        return new PagedResponse<OrderDto>(items, totalCount, filter.PageNumber, filter.PageSize);
+    }
+
+    public async Task<PagedResponse<OrderDto>> GetMyOrdersAsync(string userId, string? userEmail, QueryParameters filter, CancellationToken ct = default)
+    {
+        var query = _unitOfWork.Repository<Order>()
+            .Query()
+            .Include(o => o.Items)
+            .AsNoTracking();
+
+        if (!string.IsNullOrEmpty(userEmail))
+        {
+            var emailLower = userEmail.Trim().ToLower();
+            query = query.Where(o => o.CreatedBy == userId || (o.CustomerEmail != null && o.CustomerEmail.ToLower() == emailLower));
+        }
+        else
+        {
+            query = query.Where(o => o.CreatedBy == userId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+        {
+            var search = filter.SearchTerm.Trim().ToLower();
+            query = query.Where(o => o.OrderNumber.ToLower().Contains(search));
         }
 
         var totalCount = await query.CountAsync(ct);

@@ -13,6 +13,9 @@ import {
   User,
   ShoppingBag,
   RotateCcw,
+  Camera,
+  Download,
+  AlertTriangle,
 } from 'lucide-react';
 import { Product, Category, PosSale, ApiResponse, BusinessProfile } from '../../types';
 import { apiClient } from '../../api/client';
@@ -50,7 +53,18 @@ export const PosTerminalPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Hardware Scanner buffer
+  const scannerBuffer = useRef<string>('');
+  const lastKeyTime = useRef<number>(0);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+
+  // Camera Scanner Modal State
+  const [showCameraScanner, setShowCameraScanner] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [cameraSuccess, setCameraSuccess] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanIntervalRef = useRef<any>(null);
 
   useEffect(() => {
     // Load products, categories, and business profile
@@ -65,33 +79,193 @@ export const PosTerminalPage: React.FC = () => {
     });
   }, []);
 
-  const handleBarcodeSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const code = barcodeInput.trim();
-    if (!code) return;
+  // Hardware Barcode Scanner Machine Keyboard Listener (USB/Bluetooth HID guns)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept when focusing on other editable fields like search query or customer name
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') &&
+        activeEl !== barcodeInputRef.current
+      ) {
+        return;
+      }
+
+      const now = Date.now();
+      // Hardware barcode scanners send characters consecutively within < 80ms
+      if (now - lastKeyTime.current > 120) {
+        scannerBuffer.current = '';
+      }
+      lastKeyTime.current = now;
+
+      if (e.key === 'Enter') {
+        const code = scannerBuffer.current.trim();
+        if (code.length >= 2) {
+          lookupAndAddProduct(code);
+          scannerBuffer.current = '';
+          e.preventDefault();
+        }
+      } else if (e.key.length === 1) {
+        scannerBuffer.current += e.key;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [products, businessProfile]);
+
+  const lookupAndAddProduct = (code: string) => {
+    const trimmed = code.trim();
+    if (!trimmed) return;
 
     const matched = products.find(
-      (p) => p.barcode === code || p.sku.toLowerCase() === code.toLowerCase()
+      (p) =>
+        (p.barcode && p.barcode.toLowerCase() === trimmed.toLowerCase()) ||
+        p.sku.toLowerCase() === trimmed.toLowerCase()
     );
 
     if (matched) {
       addToCart(matched);
       setBarcodeInput('');
     } else {
-      // Query API for exact barcode
-      apiClient.get<ApiResponse<Product>>(`/products/barcode/${code}`)
+      apiClient
+        .get<ApiResponse<Product>>(`/products/barcode/${trimmed}`)
         .then((res) => {
           if (res.data.success && res.data.data) {
             addToCart(res.data.data);
             setBarcodeInput('');
           } else {
-            setErrorMsg(`No product found with barcode or SKU: ${code}`);
+            setErrorMsg(`No product found with barcode or SKU: ${trimmed}`);
           }
         })
         .catch(() => {
-          setErrorMsg(`No product found with barcode or SKU: ${code}`);
+          setErrorMsg(`No product found with barcode or SKU: ${trimmed}`);
         });
     }
+  };
+
+  const handleBarcodeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (barcodeInput.trim()) {
+      lookupAndAddProduct(barcodeInput.trim());
+    }
+  };
+
+  // Camera Barcode Scanning Controls
+  const startCameraScanner = async () => {
+    setCameraError(null);
+    setCameraSuccess(null);
+    setShowCameraScanner(true);
+
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCameraError('Camera API is not supported on this browser or connection is not secure (HTTPS).');
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => {});
+      }
+
+      // Check BarcodeDetector API
+      if ('BarcodeDetector' in window) {
+        const barcodeDetector = new (window as any).BarcodeDetector({
+          formats: ['code_128', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code', 'code_39'],
+        });
+
+        scanIntervalRef.current = setInterval(async () => {
+          if (videoRef.current && videoRef.current.readyState >= 2) {
+            try {
+              const detected = await barcodeDetector.detect(videoRef.current);
+              if (detected && detected.length > 0) {
+                const rawValue = detected[0].rawValue;
+                if (rawValue) {
+                  setCameraSuccess(`Scanned: ${rawValue}`);
+                  lookupAndAddProduct(rawValue);
+                  setTimeout(() => {
+                    stopCameraScanner();
+                  }, 600);
+                }
+              }
+            } catch {
+              // Frame dropped, continue
+            }
+          }
+        }, 400);
+      }
+    } catch (err: any) {
+      setCameraError('Unable to access device camera. Please grant camera permission in your browser or enter barcode manually.');
+    }
+  };
+
+  const stopCameraScanner = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setShowCameraScanner(false);
+  };
+
+  useEffect(() => {
+    if (showCameraScanner && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+    return () => {
+      if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [showCameraScanner]);
+
+  const downloadReceipt = () => {
+    if (!lastCompletedSale) return;
+    const itemsFormatted = lastCompletedSale.items
+      .map((i) => `${i.productName.padEnd(24)} x${i.quantity}   $${i.total.toFixed(2)}`)
+      .join('\n');
+
+    const content = `================================================
+${businessProfile?.businessName || 'Apex Retail Store'}
+${businessProfile?.address || ''}
+Phone: ${businessProfile?.phone || ''}
+================================================
+Receipt:  ${lastCompletedSale.receiptNumber}
+Date:     ${new Date(lastCompletedSale.createdAtUtc).toLocaleString()}
+Cashier:  ${lastCompletedSale.cashierName}
+Customer: ${lastCompletedSale.customerName}
+------------------------------------------------
+${itemsFormatted}
+------------------------------------------------
+Subtotal: $${lastCompletedSale.subTotal.toFixed(2)}
+Tax:      $${lastCompletedSale.taxAmount.toFixed(2)}
+TOTAL:    $${lastCompletedSale.totalAmount.toFixed(2)}
+Tendered: $${lastCompletedSale.amountTendered.toFixed(2)}
+Change:   $${lastCompletedSale.changeGiven.toFixed(2)}
+================================================
+${businessProfile?.receiptFooter || 'Thank you for your business!'}
+================================================`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Receipt-${lastCompletedSale.receiptNumber}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const addToCart = (product: Product) => {
@@ -225,7 +399,7 @@ export const PosTerminalPage: React.FC = () => {
   });
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', height: 'calc(100vh - 90px)', gap: '1.25rem' }}>
+    <div className="pos-container" style={{ gap: '1.25rem' }}>
       {/* Left Pane: Scanner, Category Tabs, Product Catalog */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflow: 'hidden' }}>
         {/* Top Controls: Barcode scan input & Keyword search */}
@@ -252,6 +426,15 @@ export const PosTerminalPage: React.FC = () => {
             </div>
             <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>
               Add
+            </button>
+            <button
+              type="button"
+              onClick={startCameraScanner}
+              className="btn btn-secondary"
+              title="Open Device Camera Barcode Scanner"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.5rem 0.875rem', whiteSpace: 'nowrap' }}
+            >
+              <Camera size={16} /> Scan Camera
             </button>
           </form>
 
@@ -389,30 +572,55 @@ export const PosTerminalPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Quantity controls */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginRight: '0.75rem' }}>
+                  {/* Enhanced Quantity Controls */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginRight: '0.5rem' }}>
                     <button
+                      type="button"
                       onClick={() => updateQuantity(line.product.id, line.quantity - 1)}
-                      style={{ padding: '0.2rem', backgroundColor: '#f1f5f9', borderRadius: '0.25rem' }}
+                      title="Decrease quantity (-1)"
+                      style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '0.25rem', cursor: 'pointer' }}
                     >
                       <Minus size={12} />
                     </button>
-                    <span style={{ fontSize: '0.8125rem', fontWeight: 700, minWidth: 20, textAlign: 'center' }}>
-                      {line.quantity}
-                    </span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={line.quantity}
+                      onChange={(e) => updateQuantity(line.product.id, Math.max(1, parseInt(e.target.value) || 1))}
+                      style={{ width: 42, height: 24, padding: 0, textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '0.25rem', fontSize: '0.8125rem', fontWeight: 700 }}
+                    />
                     <button
+                      type="button"
                       onClick={() => updateQuantity(line.product.id, line.quantity + 1)}
-                      style={{ padding: '0.2rem', backgroundColor: '#f1f5f9', borderRadius: '0.25rem' }}
+                      title="Increase quantity (+1)"
+                      style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '0.25rem', cursor: 'pointer' }}
                     >
                       <Plus size={12} />
                     </button>
                   </div>
 
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', minWidth: 60, textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem', minWidth: 55, textAlign: 'right' }}>
                     ${lineTotal.toFixed(2)}
                   </div>
 
-                  <button onClick={() => removeFromCart(line.product.id)} style={{ color: '#94a3b8', marginLeft: '0.5rem' }}>
+                  {/* Assigned Delete / Remove Product Button */}
+                  <button
+                    type="button"
+                    onClick={() => removeFromCart(line.product.id)}
+                    title="Remove item from invoice"
+                    style={{
+                      backgroundColor: '#fee2e2',
+                      color: '#ef4444',
+                      border: '1px solid #fecaca',
+                      padding: '0.25rem',
+                      borderRadius: '0.25rem',
+                      marginLeft: '0.5rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -679,22 +887,120 @@ export const PosTerminalPage: React.FC = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem' }}>
               <button
+                type="button"
                 onClick={() => window.print()}
                 className="btn btn-primary"
-                style={{ flex: 1, justifyContent: 'center' }}
+                style={{ flex: 1, justifyContent: 'center', fontSize: '0.8125rem' }}
               >
-                <Printer size={16} /> Print Receipt
+                <Printer size={15} /> Print
               </button>
               <button
+                type="button"
+                onClick={downloadReceipt}
+                className="btn btn-secondary"
+                style={{ flex: 1, justifyContent: 'center', fontSize: '0.8125rem' }}
+              >
+                <Download size={15} /> Download
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowReceiptModal(false)}
                 className="btn btn-secondary"
-                style={{ flex: 1, justifyContent: 'center' }}
+                style={{ padding: '0.5rem 0.75rem', justifyContent: 'center', fontSize: '0.8125rem' }}
               >
                 Next Sale
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Camera Barcode Scanner Modal */}
+      {showCameraScanner && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 80,
+            padding: '1rem',
+            backdropFilter: 'blur(3px)',
+          }}
+        >
+          <div className="card" style={{ width: '100%', maxWidth: 460, padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Camera size={20} color="#2563eb" />
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>Camera Barcode Scanner</h3>
+              </div>
+              <button onClick={stopCameraScanner} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {cameraError ? (
+              <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '0.75rem', borderRadius: '0.375rem', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <AlertTriangle size={16} /> {cameraError}
+              </div>
+            ) : (
+              <div style={{ position: 'relative', width: '100%', height: 260, backgroundColor: '#000000', borderRadius: '0.5rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                {/* Visual Viewfinder Reticle */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    width: '70%',
+                    height: '55%',
+                    border: '2px solid #3b82f6',
+                    borderRadius: '0.5rem',
+                    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.45)',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: 0,
+                      right: 0,
+                      height: 2,
+                      backgroundColor: '#ef4444',
+                      opacity: 0.8,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {cameraSuccess && (
+              <div style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '0.625rem', borderRadius: '0.375rem', fontSize: '0.8125rem', textAlign: 'center', fontWeight: 700 }}>
+                ✓ {cameraSuccess}
+              </div>
+            )}
+
+            <div style={{ fontSize: '0.75rem', color: '#64748b', textAlign: 'center' }}>
+              Aim your device camera at any product barcode, UPC, or QR code to scan.
+            </div>
+
+            <button
+              type="button"
+              onClick={stopCameraScanner}
+              className="btn btn-secondary"
+              style={{ width: '100%', justifyContent: 'center', padding: '0.5rem' }}
+            >
+              Close Camera Scanner
+            </button>
           </div>
         </div>
       )}

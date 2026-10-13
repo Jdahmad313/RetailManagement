@@ -33,6 +33,7 @@ public class Product : AuditableEntity, ISoftDelete
 
     public virtual ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
     public virtual ICollection<InventoryMovement> InventoryMovements { get; set; } = new List<InventoryMovement>();
+    public virtual ICollection<ProductReview> Reviews { get; set; } = new List<ProductReview>();
 
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAtUtc { get; set; }

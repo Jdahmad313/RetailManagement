@@ -32,6 +32,11 @@ public class RetailDbContext : IdentityDbContext<AppUser, AppRole, string>
     public DbSet<PurchaseOrderItem> PurchaseOrderItems => Set<PurchaseOrderItem>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<UserRefreshToken> UserRefreshTokens => Set<UserRefreshToken>();
+    public DbSet<OtpVerification> OtpVerifications => Set<OtpVerification>();
+    public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
+    public DbSet<CustomerFeedback> CustomerFeedbacks => Set<CustomerFeedback>();
+    public DbSet<ProductAuditLog> ProductAuditLogs => Set<ProductAuditLog>();
+    public DbSet<ProductMonthlySales> ProductMonthlySales => Set<ProductMonthlySales>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

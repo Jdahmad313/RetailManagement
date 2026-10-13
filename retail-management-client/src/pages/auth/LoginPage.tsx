@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Mail, Store, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, Store, AlertCircle, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -17,8 +18,14 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     setErrorMsg(null);
     try {
-      await login(email.trim(), password);
-      navigate('/admin');
+      const loggedUser = await login(email.trim(), password);
+      if (loggedUser.roles.includes('Admin') || loggedUser.roles.includes('Manager')) {
+        navigate('/admin');
+      } else if (loggedUser.roles.includes('Cashier')) {
+        navigate('/admin/pos');
+      } else {
+        navigate('/');
+      }
     } catch (err: any) {
       setErrorMsg(err.response?.data?.message || 'Invalid email or password.');
     } finally {
@@ -101,14 +108,34 @@ export const LoginPage: React.FC = () => {
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Password</label>
             <div style={{ position: 'relative' }}>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                style={{ width: '100%', padding: '0.5rem 1rem 0.5rem 2.25rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontSize: '0.875rem' }}
+                style={{ width: '100%', padding: '0.5rem 2.5rem 0.5rem 2.25rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontSize: '0.875rem' }}
               />
               <Lock size={16} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? 'Hide password' : 'Show password'}
+                style={{
+                  position: 'absolute',
+                  right: '0.625rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  padding: '0.25rem',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 
