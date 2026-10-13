@@ -31,6 +31,7 @@ import { StaffAdminPage } from './pages/admin/StaffAdminPage';
 import { ExpensesAdminPage } from './pages/admin/ExpensesAdminPage';
 import { ReportsAdminPage } from './pages/admin/ReportsAdminPage';
 import { SettingsAdminPage } from './pages/admin/SettingsAdminPage';
+import { FeedbackAdminPage } from './pages/admin/FeedbackAdminPage';
 
 const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isCashier, isAdmin, isManager } = useAuth();
@@ -86,6 +87,7 @@ export function App() {
               <Route path="staff" element={<StaffAdminPage />} />
               <Route path="expenses" element={<ExpensesAdminPage />} />
               <Route path="reports" element={<ReportsAdminPage />} />
+              <Route path="feedback" element={<FeedbackAdminPage />} />
               <Route path="settings" element={<SettingsAdminPage />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>

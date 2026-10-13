@@ -15,6 +15,7 @@ import {
   User as UserIcon,
   Users,
   Menu,
+  MessageSquare,
   X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -45,6 +46,7 @@ export const AdminLayout: React.FC = () => {
     { label: 'Orders', path: '/admin/orders', icon: ClipboardList, adminOnly: true },
     { label: 'Staff & Cashiers', path: '/admin/staff', icon: Users, adminOnly: true },
     { label: 'Expenses', path: '/admin/expenses', icon: Receipt, adminOnly: true },
+    { label: 'Customer Feedback', path: '/admin/feedback', icon: MessageSquare, adminOnly: true },
     { label: 'Reports & Analytics', path: '/admin/reports', icon: BarChart3, adminOnly: true },
     { label: 'Settings', path: '/admin/settings', icon: Settings, adminOnly: true },
     { label: 'Profile & Security', path: '/admin/profile', icon: UserIcon, adminOnly: false },
