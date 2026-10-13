@@ -25,7 +25,11 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? "Server=localhost;Database=RetailManagementDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;";
 
 builder.Services.AddDbContext<RetailDbContext>(options =>
-    options.UseSqlServer(connectionString, b => b.MigrationsAssembly(typeof(RetailDbContext).Assembly.FullName)));
+    options.UseSqlServer(connectionString, b =>
+    {
+        b.MigrationsAssembly(typeof(RetailDbContext).Assembly.FullName);
+        b.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+    }));
 
 // 2. Identity Configuration
 builder.Services.AddIdentity<AppUser, AppRole>(options =>

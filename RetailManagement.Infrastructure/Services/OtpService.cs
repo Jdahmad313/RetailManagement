@@ -63,7 +63,8 @@ public class OtpService : IOtpService
     public async Task<string?> VerifyOtpAsync(string target, string otpCode, string purpose, CancellationToken ct = default)
     {
         var normalizedTarget = target.Trim().ToLowerInvariant();
-        var codeHash = HashCode(otpCode.Trim());
+        var sanitizedCode = (otpCode ?? string.Empty).Trim().Replace(" ", "").Replace("-", "");
+        var codeHash = HashCode(sanitizedCode);
 
         var record = await _dbContext.OtpVerifications
             .Where(o => o.Target == normalizedTarget && o.Purpose == purpose && !o.IsUsed)
@@ -72,6 +73,23 @@ public class OtpService : IOtpService
 
         if (record == null)
         {
+            var anyRecent = await _dbContext.OtpVerifications
+                .Where(o => o.Target == normalizedTarget && o.Purpose == purpose)
+                .OrderByDescending(o => o.CreatedAtUtc)
+                .FirstOrDefaultAsync(ct);
+
+            if (anyRecent != null)
+            {
+                if (anyRecent.ExpiryUtc < DateTime.UtcNow)
+                {
+                    throw new BadRequestException("Your verification code has expired. Please click 'Resend Code' to receive a fresh code.");
+                }
+                if (anyRecent.IsUsed)
+                {
+                    throw new BadRequestException("This verification code was already used or replaced by a newer request. Please check your latest email or request a new code.");
+                }
+            }
+
             throw new BadRequestException("No active OTP request found for this account. Please request a new code.");
         }
 

@@ -78,13 +78,31 @@ public class AuthService : IAuthService
 
     public async Task<string> InitiateRegisterOtpAsync(RegisterInitiateDto dto, CancellationToken ct = default)
     {
-        var existing = await _userManager.FindByEmailAsync(dto.Email.Trim());
+        var email = dto.Email.Trim();
+        var existing = await _userManager.FindByEmailAsync(email);
         if (existing != null)
         {
             throw new BadRequestException("An account with this email address already exists.");
         }
 
-        var target = dto.Email.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(dto.Password) || dto.Password.Length < 6)
+        {
+            throw new BadRequestException("Password must be at least 6 characters long.");
+        }
+        if (!dto.Password.Any(char.IsUpper))
+        {
+            throw new BadRequestException("Password must contain at least one uppercase letter ('A'-'Z').");
+        }
+        if (!dto.Password.Any(char.IsLower))
+        {
+            throw new BadRequestException("Password must contain at least one lowercase letter ('a'-'z').");
+        }
+        if (!dto.Password.Any(char.IsDigit))
+        {
+            throw new BadRequestException("Password must contain at least one numeric digit ('0'-'9').");
+        }
+
+        var target = email.ToLowerInvariant();
         var payloadJson = JsonSerializer.Serialize(dto);
 
         await _otpService.InitiateOtpAsync(target, dto.FullName.Trim(), "CustomerRegistration", payloadJson, ct);

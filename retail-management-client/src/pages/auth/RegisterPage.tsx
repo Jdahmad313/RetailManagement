@@ -47,6 +47,18 @@ export const RegisterPage: React.FC = () => {
       setErrorMsg('Password must be at least 6 characters.');
       return;
     }
+    if (!/[A-Z]/.test(password)) {
+      setErrorMsg('Password must contain at least one uppercase letter (A-Z).');
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setErrorMsg('Password must contain at least one lowercase letter (a-z).');
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setErrorMsg('Password must contain at least one number (0-9).');
+      return;
+    }
 
     setLoading(true);
     setErrorMsg(null);
@@ -58,7 +70,13 @@ export const RegisterPage: React.FC = () => {
       setCanResend(false);
       setSuccessMsg(`A 6-digit verification code was sent to ${dispatchedTarget}.`);
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || err.message || 'Registration failed.');
+      const errData = err.response?.data;
+      if (errData?.errors && typeof errData.errors === 'object') {
+        const details = Object.values(errData.errors).flat().join(' ');
+        setErrorMsg(details || errData.message || 'Registration failed.');
+      } else {
+        setErrorMsg(errData?.message || err.message || 'Registration failed.');
+      }
     } finally {
       setLoading(false);
     }
@@ -66,7 +84,8 @@ export const RegisterPage: React.FC = () => {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otpCode.trim().length !== 6) {
+    const cleanOtp = otpCode.trim().replace(/\D/g, '');
+    if (cleanOtp.length !== 6) {
       setErrorMsg('Please enter a valid 6-digit code.');
       return;
     }
@@ -76,10 +95,17 @@ export const RegisterPage: React.FC = () => {
     try {
       const searchParams = new URLSearchParams(window.location.search);
       const redirectUrl = searchParams.get('redirect');
-      await verifyRegisterOtp(target, otpCode.trim());
+      const verifyTarget = (target || email).trim().toLowerCase();
+      await verifyRegisterOtp(verifyTarget, cleanOtp);
       navigate(redirectUrl || '/');
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || err.message || 'Verification failed.');
+      const errData = err.response?.data;
+      if (errData?.errors && typeof errData.errors === 'object') {
+        const details = Object.values(errData.errors).flat().join(' ');
+        setErrorMsg(details || errData.message || 'Verification failed.');
+      } else {
+        setErrorMsg(errData?.message || err.message || 'Verification failed.');
+      }
     } finally {
       setLoading(false);
     }
@@ -90,12 +116,14 @@ export const RegisterPage: React.FC = () => {
     setLoading(true);
     setErrorMsg(null);
     try {
-      await resendRegisterOtp(target);
+      const resendTarget = (target || email).trim().toLowerCase();
+      await resendRegisterOtp(resendTarget);
       setCountdown(60);
       setCanResend(false);
-      setSuccessMsg(`A fresh verification code has been dispatched to ${target}.`);
+      setSuccessMsg(`A fresh verification code has been dispatched to ${resendTarget}.`);
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || err.message || 'Failed to resend code.');
+      const errData = err.response?.data;
+      setErrorMsg(errData?.message || err.message || 'Failed to resend code.');
     } finally {
       setLoading(false);
     }
@@ -245,6 +273,10 @@ export const RegisterPage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '-0.25rem 0 0 0' }}>
+              Password must be at least 6 characters with an uppercase letter, lowercase letter, and number.
+            </p>
 
             <button
               type="submit"
