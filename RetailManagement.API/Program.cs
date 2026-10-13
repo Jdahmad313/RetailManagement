@@ -13,6 +13,7 @@ using RetailManagement.Infrastructure.Identity;
 using RetailManagement.Infrastructure.Payments;
 using RetailManagement.Infrastructure.Repositories;
 using RetailManagement.Infrastructure.Services;
+using RetailManagement.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -111,6 +112,10 @@ builder.Services.AddScoped<IBusinessSettingsService, BusinessSettingsService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 
+// Render Keep-Alive Background Service & HttpClient
+builder.Services.AddHttpClient();
+builder.Services.AddHostedService<RenderKeepAliveService>();
+
 // 6. Controllers & JSON Formatting
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -193,6 +198,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Lightweight Health Check endpoints for Render Keep-Alive & Monitors
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy", service = "RetailManagement.API", timestampUtc = DateTime.UtcNow }));
+app.MapGet("/api/v1/health", () => Results.Ok(new { status = "Healthy", service = "RetailManagement.API", timestampUtc = DateTime.UtcNow }));
 
 if (app.Environment.IsDevelopment())
 {

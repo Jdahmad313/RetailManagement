@@ -66,27 +66,12 @@ export const AdminLayout: React.FC = () => {
       {mobileSidebarOpen && (
         <div
           onClick={() => setMobileSidebarOpen(false)}
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 45 }}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', zIndex: 45, backdropFilter: 'blur(2px)' }}
         />
       )}
 
       {/* Sidebar */}
-      <aside
-        style={{
-          width: 260,
-          backgroundColor: '#0f172a',
-          color: '#f8fafc',
-          display: 'flex',
-          flexDirection: 'column',
-          flexShrink: 0,
-          position: window.innerWidth < 768 ? 'fixed' : 'relative',
-          top: 0,
-          bottom: 0,
-          left: window.innerWidth < 768 && !mobileSidebarOpen ? '-260px' : 0,
-          zIndex: 50,
-          transition: 'left 0.25s ease-in-out',
-        }}
-      >
+      <aside className={`admin-sidebar ${mobileSidebarOpen ? 'open' : ''}`}>
         {/* Brand */}
         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -101,7 +86,11 @@ export const AdminLayout: React.FC = () => {
             </div>
           </div>
           {mobileSidebarOpen && (
-            <button onClick={() => setMobileSidebarOpen(false)} style={{ color: '#94a3b8' }}>
+            <button
+              onClick={() => setMobileSidebarOpen(false)}
+              aria-label="Close menu"
+              style={{ color: '#94a3b8', background: 'none', border: 'none', padding: '0.25rem', cursor: 'pointer' }}
+            >
               <X size={20} />
             </button>
           )}
@@ -180,8 +169,9 @@ export const AdminLayout: React.FC = () => {
         <header style={{ height: 60, backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <button
-              onClick={() => setMobileSidebarOpen(true)}
-              style={{ display: 'inline-flex', background: 'none', border: 'none', color: '#334155' }}
+              onClick={() => setMobileSidebarOpen(prev => !prev)}
+              className="admin-mobile-toggle"
+              aria-label="Toggle navigation menu"
             >
               <Menu size={22} />
             </button>

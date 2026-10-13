@@ -90,13 +90,19 @@ export const CartPage: React.FC = () => {
                           style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: '0.375rem', border: '1px solid #e2e8f0' }}
                         />
                         <div>
-                          <Link to={`/product/${item.product.id}`} style={{ fontWeight: 600, color: '#0f172a' }}>
+                          <Link to={`/product/${item.product.id || item.product.sku}`} style={{ fontWeight: 600, color: '#0f172a' }}>
                             {item.product.name}
                           </Link>
                           {item.variant && (
                             <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Variant: {item.variant.name}</div>
                           )}
                           <div style={{ fontSize: '0.6875rem', color: '#94a3b8', fontFamily: 'monospace' }}>SKU: {item.product.sku}</div>
+                          <Link
+                            to={`/product/${item.product.id || item.product.sku}#reviews`}
+                            style={{ fontSize: '0.75rem', color: '#2563eb', display: 'inline-block', marginTop: '0.25rem', fontWeight: 500 }}
+                          >
+                            ⭐ Review this product
+                          </Link>
                         </div>
                       </td>
                       <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>{currencySymbol} {price.toFixed(2)}</td>

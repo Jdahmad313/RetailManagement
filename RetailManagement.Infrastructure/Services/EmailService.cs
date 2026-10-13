@@ -23,18 +23,26 @@ public class EmailService : IEmailService
 
     public async Task<bool> SendEmailAsync(string toEmail, string toName, string subject, string htmlBody, CancellationToken ct = default)
     {
-        var smtpHost = _configuration["EmailSettings:SmtpHost"];
+        var smtpHost = _configuration["EmailSettings:SmtpHost"] ?? "smtp-relay.brevo.com";
         var smtpPortStr = _configuration["EmailSettings:SmtpPort"];
-        var senderEmail = _configuration["EmailSettings:SenderEmail"] ?? "no-reply@apexretail.local";
-        var senderName = _configuration["EmailSettings:SenderName"] ?? "Apex Retail System";
-        var username = _configuration["EmailSettings:Username"];
+        var senderEmail = _configuration["EmailSettings:SenderEmail"] ?? "sufisheeen@gmail.com";
+        var senderName = _configuration["EmailSettings:SenderName"] ?? "Apex Retail Store";
+        var username = _configuration["EmailSettings:Username"] ?? "bdf3b2001@smtp-brevo.com";
+        
         var password = _configuration["EmailSettings:Password"];
-        var enableSsl = bool.TryParse(_configuration["EmailSettings:EnableSsl"], out var ssl) && ssl;
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            password = _configuration["EmailSettings__Password"]
+                ?? Environment.GetEnvironmentVariable("EmailSettings__Password")
+                ?? Environment.GetEnvironmentVariable("EmailSettings:Password")
+                ?? Environment.GetEnvironmentVariable("BREVO_SMTP_KEY")
+                ?? Environment.GetEnvironmentVariable("SMTP_PASSWORD");
+        }
 
         int port = 587;
         if (!string.IsNullOrEmpty(smtpPortStr)) int.TryParse(smtpPortStr, out port);
 
-        // DEV / MOCK FALLBACK: If SMTP host is not configured or credentials are blank, log to console
+        // Fallback: If credentials truly cannot be found
         if (string.IsNullOrWhiteSpace(smtpHost) || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
             _logger.LogWarning("\n================== [EMAIL DISPATCH - DEV SIMULATION] ==================\n" +
@@ -57,7 +65,12 @@ public class EmailService : IEmailService
             message.Body = new TextPart(TextFormat.Html) { Text = htmlBody };
 
             using var client = new SmtpClient();
-            var secureOption = enableSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto;
+            // Ensure Linux Docker environments or root CA differences do not abort Brevo STARTTLS handshake
+            client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+            client.CheckCertificateRevocation = false;
+            client.Timeout = 15000;
+
+            var secureOption = port == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
             await client.ConnectAsync(smtpHost, port, secureOption, ct);
             await client.AuthenticateAsync(username, password, ct);
 
@@ -68,7 +81,7 @@ public class EmailService : IEmailService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email to {ToEmail} via SMTP: {Message}", toEmail, ex.Message);
+            _logger.LogError(ex, "Failed to send email to {ToEmail} via SMTP ({Host}:{Port}): {Message}", toEmail, smtpHost, port, ex.Message);
             return false;
         }
     }

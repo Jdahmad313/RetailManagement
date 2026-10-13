@@ -31,19 +31,46 @@ export const ProductDetailPage: React.FC = () => {
     if (!id) return;
     setLoading(true);
 
-    // 1. Fetch product first
+    let resolvedProduct: Product | null = null;
+
+    // 1. Fetch product by ID
     try {
       const prodRes = await apiClient.get<ApiResponse<Product>>(`/products/${id}`);
       if (prodRes.data?.success && prodRes.data.data) {
-        setProduct(prodRes.data.data);
+        resolvedProduct = prodRes.data.data;
       }
-    } catch (err) {
-      console.error('Failed to load product details:', err);
-    } finally {
-      setLoading(false);
+    } catch {
+      // 2. Fallback: Lookup by SKU
+      try {
+        const skuRes = await apiClient.get<ApiResponse<Product>>(`/products/sku/${encodeURIComponent(id)}`);
+        if (skuRes.data?.success && skuRes.data.data) {
+          resolvedProduct = skuRes.data.data;
+        }
+      } catch {
+        // 3. Fallback: Lookup by Barcode
+        try {
+          const bcRes = await apiClient.get<ApiResponse<Product>>(`/products/barcode/${encodeURIComponent(id)}`);
+          if (bcRes.data?.success && bcRes.data.data) {
+            resolvedProduct = bcRes.data.data;
+          }
+        } catch {
+          // 4. Fallback: Search in product catalog
+          try {
+            const searchRes = await apiClient.get<ApiResponse<{ items: Product[] }>>(`/products?searchTerm=${encodeURIComponent(id)}`);
+            if (searchRes.data?.success && searchRes.data.data?.items?.length > 0) {
+              resolvedProduct = searchRes.data.data.items[0];
+            }
+          } catch {
+            // Not found
+          }
+        }
+      }
     }
 
-    // 2. Fetch business profile for currency symbol
+    setProduct(resolvedProduct);
+    setLoading(false);
+
+    // Fetch business profile for currency symbol
     apiClient.get<ApiResponse<any>>('/businesssettings')
       .then((res) => {
         if (res.data?.success && res.data.data?.currencySymbol) {
@@ -52,14 +79,16 @@ export const ProductDetailPage: React.FC = () => {
       })
       .catch(() => {});
 
-    // 3. Resiliently fetch reviews in background without blocking product view
-    try {
-      const revRes = await apiClient.get<ApiResponse<ProductReview[]>>(`/products/${id}/reviews`);
-      if (revRes.data?.success && revRes.data.data) {
-        setReviews(revRes.data.data);
+    // Resiliently fetch reviews using the resolved product GUID
+    if (resolvedProduct?.id) {
+      try {
+        const revRes = await apiClient.get<ApiResponse<ProductReview[]>>(`/products/${resolvedProduct.id}/reviews`);
+        if (revRes.data?.success && revRes.data.data) {
+          setReviews(revRes.data.data);
+        }
+      } catch (err) {
+        console.warn('Reviews could not be loaded:', err);
       }
-    } catch (err) {
-      console.warn('Reviews could not be loaded:', err);
     }
   };
 
@@ -68,15 +97,24 @@ export const ProductDetailPage: React.FC = () => {
   }, [id]);
 
   if (loading) {
-    return <div className="container" style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>Loading product details...</div>;
+    return (
+      <div className="container" style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>
+        <p style={{ color: '#64748b', fontSize: '1rem' }}>Loading product details & reviews...</p>
+      </div>
+    );
   }
 
   if (!product) {
     return (
       <div className="container" style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>
-        <h2>Product not found</h2>
-        <Link to="/catalog" className="btn btn-secondary" style={{ marginTop: '1rem' }}>
-          Back to Catalog
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.75rem' }}>
+          Product Not Found
+        </h2>
+        <p style={{ color: '#64748b', fontSize: '0.9375rem', maxWidth: 460, margin: '0 auto 1.5rem' }}>
+          This item may have been updated, relocated, or temporarily unlisted. Check our latest catalog items below.
+        </p>
+        <Link to="/catalog" className="btn btn-primary" style={{ display: 'inline-flex', padding: '0.625rem 1.5rem' }}>
+          Browse Product Catalog →
         </Link>
       </div>
     );
@@ -99,7 +137,7 @@ export const ProductDetailPage: React.FC = () => {
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id || !comment.trim()) return;
+    if (!product || !comment.trim()) return;
     setSubmittingReview(true);
     setReviewError(null);
     try {
@@ -107,7 +145,7 @@ export const ProductDetailPage: React.FC = () => {
       const authorEmail = (isAuthenticated ? user?.email : guestEmail.trim()) || 'customer@store.local';
 
       const res = await apiClient.post<ApiResponse<ProductReview>>(
-        `/products/${id}/reviews?guestName=${encodeURIComponent(authorName)}&guestEmail=${encodeURIComponent(authorEmail)}`,
+        `/products/${product.id}/reviews?guestName=${encodeURIComponent(authorName)}&guestEmail=${encodeURIComponent(authorEmail)}`,
         {
           rating,
           comment: comment.trim(),
@@ -167,8 +205,12 @@ export const ProductDetailPage: React.FC = () => {
                 />
               ))}
             </div>
-            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>{averageRating}</span>
-            <span style={{ fontSize: '0.8125rem', color: '#64748b' }}>({reviews.length} customer reviews)</span>
+            <a
+              href="#reviews"
+              style={{ fontSize: '0.8125rem', color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}
+            >
+              ({reviews.length} customer reviews) • Write a Review ↓
+            </a>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -255,7 +297,7 @@ export const ProductDetailPage: React.FC = () => {
       </div>
 
       {/* Customer Reviews Section */}
-      <div style={{ marginTop: '3rem' }}>
+      <div id="reviews" style={{ marginTop: '3rem', scrollMarginTop: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
           <MessageSquare size={22} color="#2563eb" />
           <h2 style={{ fontSize: '1.375rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
