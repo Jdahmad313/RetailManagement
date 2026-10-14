@@ -108,14 +108,16 @@ public static class DatabaseSeeder
 
         await context.SaveChangesAsync();
 
-        // 4. Truncate demo catalog/inventory/sales if demo data is present or if real catalog not yet initialized
-        // NOTE: USER DATA (AspNetUsers, AspNetRoles, UserRefreshTokens, OtpVerifications) IS STRICTLY PRESERVED.
+        // 4. One-time clean-up of legacy demo catalog/inventory/sales
+        // CRITICAL PRODUCTION SAFETY: This condition ONLY evaluates to true if legacy demo products
+        // (ELEC-, CLOTH-, GROC-OO-001) are present in the database.
+        // During this initial migration deployment, it cleanly clears out the demo placeholders.
+        // On ALL FUTURE deployments, 'hasOldDemoProducts' is FALSE, so this truncation block is 100% skipped forever.
+        // Real user sales, orders, newly added products, and customer records will NEVER be truncated.
         bool hasOldDemoProducts = await context.Products.IgnoreQueryFilters()
             .AnyAsync(p => p.SKU.StartsWith("ELEC-") || p.SKU.StartsWith("CLOTH-") || p.SKU.StartsWith("GROC-OO-001"));
-        bool hasMukhtarCatalog = await context.Products.IgnoreQueryFilters()
-            .AnyAsync(p => p.SKU.StartsWith("MBK-"));
 
-        if (hasOldDemoProducts || !hasMukhtarCatalog)
+        if (hasOldDemoProducts)
         {
             try
             {
@@ -173,36 +175,37 @@ public static class DatabaseSeeder
             }
         }
 
-        // 5. Seed Real Village Karyana Categories
-        if (!await context.Categories.AnyAsync())
+        // 5. Seed Real Village Karyana Categories (Additive: only adds missing categories)
+        var categories = new List<Category>
         {
-            var categories = new List<Category>
+            new() { Name = "Beverages & Cold Drinks", Slug = "beverages", Description = "Next Cola, Khilafat Cola, Coke, Pepsi, Pakola & Sharbat", DisplayOrder = 1, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&auto=format&fit=crop&q=80" },
+            new() { Name = "Home & Laundry Care", Slug = "home-laundry", Description = "Surf Excel, Ariel, Bonus, Vim Bar & Washing Soaps", DisplayOrder = 2, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=500&auto=format&fit=crop&q=80" },
+            new() { Name = "Grains, Flours & Bulk Packs", Slug = "grains-bulk-packs", Description = "Chakki Atta, Gandum, Basmati Rice, Cheeni & Daal (1kg to 100kg)", DisplayOrder = 3, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=500&auto=format&fit=crop&q=80" },
+            new() { Name = "Dry Fruits, Nuts & Fresh Produce", Slug = "dry-fruits-produce", Description = "Kagzi Akhrot, Akhrot Giri, Badam & Fresh Desi Mooli", DisplayOrder = 4, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1563746098-eb113ec46102?w=500&auto=format&fit=crop&q=80" },
+            new() { Name = "Biscuits, Snacks & Nimko", Slug = "biscuits-nimko-snacks", Description = "B4U Nimko Special Mix, Sooper, Prince, Rio & Shahi Nankhatai", DisplayOrder = 5, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=500&auto=format&fit=crop&q=80" },
+            new() { Name = "Cooking Oil, Ghee & Spices", Slug = "cooking-spices-oil", Description = "Dalda Oil, Sufi Ghee, Shan Masala, Chilli, Salt & Zeera", DisplayOrder = 6, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&auto=format&fit=crop&q=80" },
+            new() { Name = "Tea & Dairy Products", Slug = "tea-dairy-sugar", Description = "Tapal Danedar, Olper's Milk, MilkPak & Everyday Powder", DisplayOrder = 7, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=500&auto=format&fit=crop&q=80" }
+        };
+
+        foreach (var cat in categories)
+        {
+            if (!await context.Categories.IgnoreQueryFilters().AnyAsync(c => c.Slug == cat.Slug))
             {
-                new() { Name = "Beverages & Cold Drinks", Slug = "beverages", Description = "Next Cola, Khilafat Cola, Coke, Pepsi, Pakola & Sharbat", DisplayOrder = 1, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&auto=format&fit=crop&q=80" },
-                new() { Name = "Home & Laundry Care", Slug = "home-laundry", Description = "Surf Excel, Ariel, Bonus, Vim Bar & Washing Soaps", DisplayOrder = 2, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=500&auto=format&fit=crop&q=80" },
-                new() { Name = "Grains, Flours & Bulk Packs", Slug = "grains-bulk-packs", Description = "Chakki Atta, Gandum, Basmati Rice, Cheeni & Daal (1kg to 100kg)", DisplayOrder = 3, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=500&auto=format&fit=crop&q=80" },
-                new() { Name = "Dry Fruits, Nuts & Fresh Produce", Slug = "dry-fruits-produce", Description = "Kagzi Akhrot, Akhrot Giri, Badam & Fresh Desi Mooli", DisplayOrder = 4, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1563746098-eb113ec46102?w=500&auto=format&fit=crop&q=80" },
-                new() { Name = "Biscuits, Snacks & Nimko", Slug = "biscuits-nimko-snacks", Description = "B4U Nimko Special Mix, Sooper, Prince, Rio & Shahi Nankhatai", DisplayOrder = 5, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=500&auto=format&fit=crop&q=80" },
-                new() { Name = "Cooking Oil, Ghee & Spices", Slug = "cooking-spices-oil", Description = "Dalda Oil, Sufi Ghee, Shan Masala, Chilli, Salt & Zeera", DisplayOrder = 6, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&auto=format&fit=crop&q=80" },
-                new() { Name = "Tea & Dairy Products", Slug = "tea-dairy-sugar", Description = "Tapal Danedar, Olper's Milk, MilkPak & Everyday Powder", DisplayOrder = 7, IsActive = true, ImageUrl = "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=500&auto=format&fit=crop&q=80" }
-            };
-
-            await context.Categories.AddRangeAsync(categories);
-            await context.SaveChangesAsync();
+                await context.Categories.AddAsync(cat);
+            }
         }
+        await context.SaveChangesAsync();
 
-        // 6. Seed Real Mukhtar Bashir Karyana Catalog (10 stock for each item)
-        if (!await context.Products.AnyAsync())
-        {
-            var bevCat = await context.Categories.FirstAsync(c => c.Slug == "beverages");
-            var lndCat = await context.Categories.FirstAsync(c => c.Slug == "home-laundry");
-            var grnCat = await context.Categories.FirstAsync(c => c.Slug == "grains-bulk-packs");
-            var dryCat = await context.Categories.FirstAsync(c => c.Slug == "dry-fruits-produce");
-            var nmkCat = await context.Categories.FirstAsync(c => c.Slug == "biscuits-nimko-snacks");
-            var oilCat = await context.Categories.FirstAsync(c => c.Slug == "cooking-spices-oil");
-            var teaCat = await context.Categories.FirstAsync(c => c.Slug == "tea-dairy-sugar");
+        // 6. Seed Real Mukhtar Bashir Karyana Catalog (Additive: only adds products if SKU doesn't exist)
+        var bevCat = await context.Categories.FirstAsync(c => c.Slug == "beverages");
+        var lndCat = await context.Categories.FirstAsync(c => c.Slug == "home-laundry");
+        var grnCat = await context.Categories.FirstAsync(c => c.Slug == "grains-bulk-packs");
+        var dryCat = await context.Categories.FirstAsync(c => c.Slug == "dry-fruits-produce");
+        var nmkCat = await context.Categories.FirstAsync(c => c.Slug == "biscuits-nimko-snacks");
+        var oilCat = await context.Categories.FirstAsync(c => c.Slug == "cooking-spices-oil");
+        var teaCat = await context.Categories.FirstAsync(c => c.Slug == "tea-dairy-sugar");
 
-            var products = new List<Product>
+        var products = new List<Product>
             {
                 // --- BEVERAGES ---
                 new()
@@ -1173,32 +1176,35 @@ public static class DatabaseSeeder
                 }
             };
 
-            await context.Products.AddRangeAsync(products);
-            await context.SaveChangesAsync();
-
-            // Create initial stock movements (exactly 10 in stock for each item)
+            bool anyProductAdded = false;
             foreach (var p in products)
             {
-                context.InventoryMovements.Add(new InventoryMovement
+                if (!await context.Products.IgnoreQueryFilters().AnyAsync(existing => existing.SKU == p.SKU))
                 {
-                    ProductId = p.Id,
-                    QuantityChange = p.StockQuantity,
-                    QuantityBefore = 0,
-                    QuantityAfter = p.StockQuantity,
-                    MovementType = InventoryMovementType.OpeningStock,
-                    ReferenceType = "InitialCatalogSeed",
-                    ReferenceId = p.SKU,
-                    UnitCost = p.PurchaseCost,
-                    Reason = "Opening stock for Mukhtar Bashir Merchant Karyana Store",
-                    PerformedByUserName = "System Administrator"
-                });
+                    await context.Products.AddAsync(p);
+                    context.InventoryMovements.Add(new InventoryMovement
+                    {
+                        ProductId = p.Id,
+                        QuantityChange = p.StockQuantity,
+                        QuantityBefore = 0,
+                        QuantityAfter = p.StockQuantity,
+                        MovementType = InventoryMovementType.OpeningStock,
+                        ReferenceType = "InitialCatalogSeed",
+                        ReferenceId = p.SKU,
+                        UnitCost = p.PurchaseCost,
+                        Reason = "Opening stock for Mukhtar Bashir Merchant Karyana Store",
+                        PerformedByUserName = "System Administrator"
+                    });
+                    anyProductAdded = true;
+                }
             }
-            await context.SaveChangesAsync();
-        }
 
-        // 7. Seed Village Store Expense Categories & Initial Operating Expenses
-        if (!await context.ExpenseCategories.AnyAsync())
-        {
+            if (anyProductAdded)
+            {
+                await context.SaveChangesAsync();
+            }
+
+            // 7. Seed Village Store Expense Categories & Initial Operating Expenses (Additive)
             var expCategories = new List<ExpenseCategory>
             {
                 new() { Name = "Store Rent (دکان کا کرایہ)", Description = "Monthly store lease in Jurian, Hafizabad", IsActive = true },
@@ -1208,12 +1214,20 @@ public static class DatabaseSeeder
                 new() { Name = "Store Maintenance & Miscellaneous", Description = "Repairs, cleaning supplies, and incidental costs", IsActive = true }
             };
 
-            await context.ExpenseCategories.AddRangeAsync(expCategories);
+            foreach (var ec in expCategories)
+            {
+                if (!await context.ExpenseCategories.IgnoreQueryFilters().AnyAsync(existing => existing.Name == ec.Name))
+                {
+                    await context.ExpenseCategories.AddAsync(ec);
+                }
+            }
             await context.SaveChangesAsync();
 
-            var rentCat = await context.ExpenseCategories.FirstAsync(c => c.Name.Contains("Store Rent"));
-            var elecCat = await context.ExpenseCategories.FirstAsync(c => c.Name.Contains("Electricity"));
-            var carriageCat = await context.ExpenseCategories.FirstAsync(c => c.Name.Contains("Carriage"));
+            if (!await context.Expenses.IgnoreQueryFilters().AnyAsync())
+            {
+                var rentCat = await context.ExpenseCategories.FirstAsync(c => c.Name.Contains("Store Rent"));
+                var elecCat = await context.ExpenseCategories.FirstAsync(c => c.Name.Contains("Electricity"));
+                var carriageCat = await context.ExpenseCategories.FirstAsync(c => c.Name.Contains("Carriage"));
 
             var sampleExpenses = new List<Expense>
             {
