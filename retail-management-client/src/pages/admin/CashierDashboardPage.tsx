@@ -14,10 +14,12 @@ import {
 } from 'lucide-react';
 import { apiClient } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useBusiness } from '../../context/BusinessContext';
 import { PosSale, ApiResponse, PagedResponse, BusinessProfile } from '../../types';
 
 export const CashierDashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const { currencySymbol } = useBusiness();
   const [sales, setSales] = useState<PosSale[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReceipt, setSelectedReceipt] = useState<PosSale | null>(null);
@@ -102,7 +104,7 @@ export const CashierDashboardPage: React.FC = () => {
           </div>
           <div>
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Shift Total Sales</div>
-            <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#0f172a' }}>${totalSalesAmount.toFixed(2)}</div>
+            <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#0f172a' }}>{currencySymbol} {totalSalesAmount.toFixed(2)}</div>
           </div>
         </div>
 
@@ -122,7 +124,7 @@ export const CashierDashboardPage: React.FC = () => {
           </div>
           <div>
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Cash Collected</div>
-            <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#0f172a' }}>${cashSalesAmount.toFixed(2)}</div>
+            <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#0f172a' }}>{currencySymbol} {cashSalesAmount.toFixed(2)}</div>
           </div>
         </div>
 
@@ -132,7 +134,7 @@ export const CashierDashboardPage: React.FC = () => {
           </div>
           <div>
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Card & Digital</div>
-            <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#0f172a' }}>${cardSalesAmount.toFixed(2)}</div>
+            <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#0f172a' }}>{currencySymbol} {cardSalesAmount.toFixed(2)}</div>
           </div>
         </div>
       </div>
@@ -242,7 +244,7 @@ export const CashierDashboardPage: React.FC = () => {
                     <tr key={i.id}>
                       <td>{i.productName}</td>
                       <td style={{ textAlign: 'center' }}>{i.quantity}</td>
-                      <td style={{ textAlign: 'right' }}>${i.total.toFixed(2)}</td>
+                      <td style={{ textAlign: 'right' }}>{currencySymbol} {i.total.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -251,23 +253,23 @@ export const CashierDashboardPage: React.FC = () => {
               <div style={{ borderTop: '1px dashed #000', paddingTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Subtotal:</span>
-                  <span>${selectedReceipt.subTotal.toFixed(2)}</span>
+                  <span>{currencySymbol} {selectedReceipt.subTotal.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Tax:</span>
-                  <span>${selectedReceipt.taxAmount.toFixed(2)}</span>
+                  <span>{currencySymbol} {selectedReceipt.taxAmount.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '0.9375rem', borderTop: '1px solid #000', paddingTop: '0.25rem' }}>
                   <span>TOTAL:</span>
-                  <span>${selectedReceipt.totalAmount.toFixed(2)}</span>
+                  <span>{currencySymbol} {selectedReceipt.totalAmount.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Tendered:</span>
-                  <span>${selectedReceipt.amountTendered.toFixed(2)}</span>
+                  <span>{currencySymbol} {selectedReceipt.amountTendered.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Change:</span>
-                  <span>${selectedReceipt.changeGiven.toFixed(2)}</span>
+                  <span>{currencySymbol} {selectedReceipt.changeGiven.toFixed(2)}</span>
                 </div>
               </div>
 

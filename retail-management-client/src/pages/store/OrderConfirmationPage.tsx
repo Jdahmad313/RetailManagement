@@ -3,8 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import { CheckCircle2, ArrowRight, Printer, Package, Clock } from 'lucide-react';
 import { Order, ApiResponse } from '../../types';
 import { apiClient } from '../../api/client';
+import { useBusiness } from '../../context/BusinessContext';
 
 export const OrderConfirmationPage: React.FC = () => {
+  const { currencySymbol } = useBusiness();
   const { orderNumber } = useParams<{ orderNumber: string }>();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export const OrderConfirmationPage: React.FC = () => {
           </div>
           <div>
             <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Total Paid</div>
-            <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>${order.totalAmount.toFixed(2)}</div>
+            <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>{currencySymbol} {order.totalAmount.toFixed(2)}</div>
           </div>
         </div>
 
@@ -98,19 +100,19 @@ export const OrderConfirmationPage: React.FC = () => {
                   <div style={{ fontSize: '0.6875rem', color: '#94a3b8', fontFamily: 'monospace' }}>SKU: {i.sku}</div>
                 </td>
                 <td style={{ padding: '0.75rem', textAlign: 'center' }}>{i.quantity}</td>
-                <td style={{ padding: '0.75rem', textAlign: 'right' }}>${i.unitPrice.toFixed(2)}</td>
-                <td style={{ padding: '0.75rem 0', textAlign: 'right', fontWeight: 700 }}>${i.total.toFixed(2)}</td>
+                <td style={{ padding: '0.75rem', textAlign: 'right' }}>{currencySymbol} {i.unitPrice.toFixed(2)}</td>
+                <td style={{ padding: '0.75rem 0', textAlign: 'right', fontWeight: 700 }}>{currencySymbol} {i.total.toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', alignItems: 'flex-end', fontSize: '0.875rem' }}>
-          <div><span style={{ color: '#64748b' }}>Subtotal: </span> <strong>${order.subTotal.toFixed(2)}</strong></div>
-          <div><span style={{ color: '#64748b' }}>Tax: </span> <strong>${order.taxAmount.toFixed(2)}</strong></div>
-          <div><span style={{ color: '#64748b' }}>Delivery Fee: </span> <strong>${order.shippingFee.toFixed(2)}</strong></div>
+          <div><span style={{ color: '#64748b' }}>Subtotal: </span> <strong>{currencySymbol} {order.subTotal.toFixed(2)}</strong></div>
+          <div><span style={{ color: '#64748b' }}>Tax: </span> <strong>{currencySymbol} {order.taxAmount.toFixed(2)}</strong></div>
+          <div><span style={{ color: '#64748b' }}>Delivery Fee: </span> <strong>{currencySymbol} {order.shippingFee.toFixed(2)}</strong></div>
           <div style={{ fontSize: '1.125rem', color: '#0f172a', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
-            Grand Total: <strong style={{ color: '#2563eb' }}>${order.totalAmount.toFixed(2)}</strong>
+            Grand Total: <strong style={{ color: '#2563eb' }}>{currencySymbol} {order.totalAmount.toFixed(2)}</strong>
           </div>
         </div>
       </div>

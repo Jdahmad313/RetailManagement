@@ -11,8 +11,10 @@ import {
 } from 'lucide-react';
 import { DashboardSummary, ApiResponse } from '../../types';
 import { apiClient } from '../../api/client';
+import { useBusiness } from '../../context/BusinessContext';
 
 export const DashboardPage: React.FC = () => {
+  const { currencySymbol } = useBusiness();
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +51,7 @@ export const DashboardPage: React.FC = () => {
           </div>
           <div>
             <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Sales Today</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>${data.salesToday.toFixed(2)}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>{currencySymbol} {data.salesToday.toFixed(2)}</div>
             <div style={{ fontSize: '0.6875rem', color: '#16a34a', fontWeight: 600 }}>{data.ordersToday} transactions today</div>
           </div>
         </div>
@@ -60,7 +62,7 @@ export const DashboardPage: React.FC = () => {
           </div>
           <div>
             <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Sales This Month</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>${data.salesThisMonth.toFixed(2)}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>{currencySymbol} {data.salesThisMonth.toFixed(2)}</div>
             <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>{data.ordersThisMonth} total orders</div>
           </div>
         </div>
@@ -84,7 +86,7 @@ export const DashboardPage: React.FC = () => {
           </div>
           <div>
             <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Expenses This Month</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>${data.expensesThisMonth.toFixed(2)}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>{currencySymbol} {data.expensesThisMonth.toFixed(2)}</div>
             <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>Operating & supplies</div>
           </div>
         </div>
@@ -103,18 +105,18 @@ export const DashboardPage: React.FC = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '0.375rem', fontSize: '0.875rem' }}>
               <span style={{ color: '#475569' }}>Gross Profit (Revenue - COGS)</span>
-              <strong style={{ color: '#16a34a' }}>${data.estimatedGrossProfitThisMonth.toFixed(2)}</strong>
+              <strong style={{ color: '#16a34a' }}>{currencySymbol} {data.estimatedGrossProfitThisMonth.toFixed(2)}</strong>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '0.375rem', fontSize: '0.875rem' }}>
               <span style={{ color: '#475569' }}>Operating Expenses</span>
-              <strong style={{ color: '#dc2626' }}>-${data.expensesThisMonth.toFixed(2)}</strong>
+              <strong style={{ color: '#dc2626' }}>-{currencySymbol} {data.expensesThisMonth.toFixed(2)}</strong>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.875rem', backgroundColor: '#eff6ff', borderRadius: '0.375rem', fontSize: '1rem', border: '1px solid #bfdbfe' }}>
               <span style={{ fontWeight: 700, color: '#1e3a8a' }}>Estimated Net Operating Result</span>
               <strong style={{ color: data.estimatedNetProfitThisMonth >= 0 ? '#16a34a' : '#dc2626' }}>
-                ${data.estimatedNetProfitThisMonth.toFixed(2)}
+                {currencySymbol} {data.estimatedNetProfitThisMonth.toFixed(2)}
               </strong>
             </div>
           </div>
@@ -203,7 +205,7 @@ export const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.5rem' }}>
-                    <div style={{ fontWeight: 700 }}>${p.totalRevenue.toFixed(2)}</div>
+                    <div style={{ fontWeight: 700 }}>{currencySymbol} {p.totalRevenue.toFixed(2)}</div>
                     <div style={{ fontSize: '0.6875rem', color: '#16a34a' }}>{p.unitsSold} sold</div>
                   </div>
                 </div>
