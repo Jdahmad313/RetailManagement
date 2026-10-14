@@ -4,8 +4,10 @@ import { ShoppingBag, ArrowRight, Truck, RotateCcw, ShieldCheck, Tag } from 'luc
 import { Product, Category, ApiResponse } from '../../types';
 import { apiClient } from '../../api/client';
 import { useCart } from '../../context/CartContext';
+import { useBusiness } from '../../context/BusinessContext';
 
 export const HomePage: React.FC = () => {
+  const { currencySymbol, profile } = useBusiness();
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +72,7 @@ export const HomePage: React.FC = () => {
             </div>
             <div>
               <h4 style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Express Delivery</h4>
-              <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Free shipping on orders over $75</p>
+              <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Free delivery on orders over {currencySymbol} {profile?.freeDeliveryThreshold || 1000}</p>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -197,11 +199,11 @@ export const HomePage: React.FC = () => {
                 <div style={{ marginTop: 'auto', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <span style={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a' }}>
-                      ${p.effectivePrice.toFixed(2)}
+                      {currencySymbol} {p.effectivePrice.toFixed(2)}
                     </span>
                     {p.discountPrice && (
                       <span style={{ fontSize: '0.8125rem', color: '#94a3b8', textDecoration: 'line-through', marginLeft: '0.5rem' }}>
-                        ${p.sellingPrice.toFixed(2)}
+                        {currencySymbol} {p.sellingPrice.toFixed(2)}
                       </span>
                     )}
                   </div>

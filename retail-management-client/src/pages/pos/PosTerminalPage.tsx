@@ -20,6 +20,7 @@ import {
 import { Product, Category, PosSale, ApiResponse, BusinessProfile } from '../../types';
 import { apiClient } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useBusiness } from '../../context/BusinessContext';
 
 interface PosCartLine {
   product: Product;
@@ -29,6 +30,7 @@ interface PosCartLine {
 
 export const PosTerminalPage: React.FC = () => {
   const { user } = useAuth();
+  const { currencySymbol } = useBusiness();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -232,14 +234,15 @@ export const PosTerminalPage: React.FC = () => {
 
   const downloadReceipt = () => {
     if (!lastCompletedSale) return;
+    const sym = businessProfile?.currencySymbol || currencySymbol || 'Rs.';
     const itemsFormatted = lastCompletedSale.items
-      .map((i) => `${i.productName.padEnd(24)} x${i.quantity}   $${i.total.toFixed(2)}`)
+      .map((i) => `${i.productName.padEnd(24)} x${i.quantity}   ${sym} ${i.total.toFixed(2)}`)
       .join('\n');
 
     const content = `================================================
-${businessProfile?.businessName || 'Apex Retail Store'}
-${businessProfile?.address || ''}
-Phone: ${businessProfile?.phone || ''}
+${businessProfile?.businessName || 'Mukhtar Bashir Merchant Karyana'}
+${businessProfile?.address || 'Jurian, Hafizabad'}
+Phone: ${businessProfile?.phone || '+923446583468'}
 ================================================
 Receipt:  ${lastCompletedSale.receiptNumber}
 Date:     ${new Date(lastCompletedSale.createdAtUtc).toLocaleString()}
@@ -248,13 +251,13 @@ Customer: ${lastCompletedSale.customerName}
 ------------------------------------------------
 ${itemsFormatted}
 ------------------------------------------------
-Subtotal: $${lastCompletedSale.subTotal.toFixed(2)}
-Tax:      $${lastCompletedSale.taxAmount.toFixed(2)}
-TOTAL:    $${lastCompletedSale.totalAmount.toFixed(2)}
-Tendered: $${lastCompletedSale.amountTendered.toFixed(2)}
-Change:   $${lastCompletedSale.changeGiven.toFixed(2)}
+Subtotal: ${sym} ${lastCompletedSale.subTotal.toFixed(2)}
+Tax:      ${sym} ${lastCompletedSale.taxAmount.toFixed(2)}
+TOTAL:    ${sym} ${lastCompletedSale.totalAmount.toFixed(2)}
+Tendered: ${sym} ${lastCompletedSale.amountTendered.toFixed(2)}
+Change:   ${sym} ${lastCompletedSale.changeGiven.toFixed(2)}
 ================================================
-${businessProfile?.receiptFooter || 'Thank you for your business!'}
+${businessProfile?.receiptFooter || 'Shukriya! Tashreef awri ka bohot shukriya.'}
 ================================================`;
 
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -525,7 +528,7 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
                 <span style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#2563eb' }}>
-                  ${p.effectivePrice.toFixed(2)}
+                  {currencySymbol} {p.effectivePrice.toFixed(2)}
                 </span>
                 <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: p.stockQuantity <= p.reorderThreshold ? '#d97706' : '#64748b' }}>
                   Stock: {p.stockQuantity}
@@ -568,7 +571,7 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
                   <div style={{ flex: 1, marginRight: '0.5rem' }}>
                     <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a' }}>{line.product.name}</div>
                     <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                      ${line.product.effectivePrice.toFixed(2)} / {line.product.unit}
+                      {currencySymbol} {line.product.effectivePrice.toFixed(2)} / {line.product.unit}
                     </div>
                   </div>
 
@@ -600,7 +603,7 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
                   </div>
 
                   <div style={{ fontWeight: 700, fontSize: '0.875rem', minWidth: 55, textAlign: 'right' }}>
-                    ${lineTotal.toFixed(2)}
+                    {currencySymbol} {lineTotal.toFixed(2)}
                   </div>
 
                   {/* Assigned Delete / Remove Product Button */}
@@ -633,11 +636,11 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
         <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', marginTop: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.375rem', color: '#64748b' }}>
             <span>Subtotal</span>
-            <span>${subTotal.toFixed(2)}</span>
+            <span>{currencySymbol} {subTotal.toFixed(2)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.375rem', color: '#64748b' }}>
             <span>Tax ({taxRate}%)</span>
-            <span>${taxAmount.toFixed(2)}</span>
+            <span>{currencySymbol} {taxAmount.toFixed(2)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.75rem', color: '#64748b' }}>
             <span>Discount</span>
@@ -651,7 +654,7 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', marginBottom: '1rem' }}>
             <span>Total Due</span>
-            <span style={{ color: '#2563eb' }}>${grandTotal.toFixed(2)}</span>
+            <span style={{ color: '#2563eb' }}>{currencySymbol} {grandTotal.toFixed(2)}</span>
           </div>
 
           <button
@@ -660,7 +663,7 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
             className="btn btn-primary"
             style={{ width: '100%', padding: '0.875rem', fontSize: '1rem', justifyContent: 'center' }}
           >
-            Pay & Complete Sale (${grandTotal.toFixed(2)})
+            Pay & Complete Sale ({currencySymbol} {grandTotal.toFixed(2)})
           </button>
         </div>
       </div>
@@ -676,7 +679,7 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
 
             <div style={{ textAlign: 'center', marginBottom: '1.5rem', backgroundColor: '#eff6ff', padding: '1rem', borderRadius: '0.5rem' }}>
               <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 600 }}>Amount Due</div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1e40af' }}>${grandTotal.toFixed(2)}</div>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1e40af' }}>{currencySymbol} {grandTotal.toFixed(2)}</div>
             </div>
 
             {/* Payment Method Tabs */}
@@ -737,7 +740,7 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
             {/* Cash Tender Mode */}
             {paymentType === 'cash' && (
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.375rem' }}>Cash Received ($)</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.375rem' }}>Cash Received ({currencySymbol})</label>
                 <input
                   type="number"
                   value={cashTendered}
@@ -747,13 +750,13 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
 
                 {/* Quick bill buttons */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginBottom: '1rem' }}>
-                  {[20, 50, 100, 200].map((bill) => (
+                  {[100, 500, 1000, 5000].map((bill) => (
                     <button
                       key={bill}
                       onClick={() => setCashTendered(bill)}
                       style={{ padding: '0.375rem', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '0.25rem', fontWeight: 700, fontSize: '0.8125rem' }}
                     >
-                      ${bill}
+                      {currencySymbol} {bill}
                     </button>
                   ))}
                 </div>
@@ -761,7 +764,7 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '0.375rem', marginBottom: '1.25rem' }}>
                   <span style={{ fontWeight: 600 }}>Change Due:</span>
                   <strong style={{ fontSize: '1.125rem', color: cashTendered >= grandTotal ? '#16a34a' : '#dc2626' }}>
-                    ${Math.max(0, cashTendered - grandTotal).toFixed(2)}
+                    {currencySymbol} {Math.max(0, cashTendered - grandTotal).toFixed(2)}
                   </strong>
                 </div>
               </div>
@@ -780,7 +783,7 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
             {paymentType === 'split' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>Cash Component ($)</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>Cash Component ({currencySymbol})</label>
                   <input
                     type="number"
                     value={splitCashAmount}
@@ -789,7 +792,7 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>Card Component ($)</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>Card Component ({currencySymbol})</label>
                   <input
                     type="number"
                     value={splitCardAmount}
@@ -798,7 +801,7 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
                   />
                 </div>
                 <div style={{ fontSize: '0.75rem', color: splitCashAmount + splitCardAmount >= grandTotal ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
-                  Total Collected: ${(splitCashAmount + splitCardAmount).toFixed(2)} / ${grandTotal.toFixed(2)}
+                  Total Collected: {currencySymbol} {(splitCashAmount + splitCardAmount).toFixed(2)} / {currencySymbol} {grandTotal.toFixed(2)}
                 </div>
               </div>
             )}
@@ -853,7 +856,7 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
                     <tr key={i.id}>
                       <td>{i.productName}</td>
                       <td style={{ textAlign: 'center' }}>{i.quantity}</td>
-                      <td style={{ textAlign: 'right' }}>${i.total.toFixed(2)}</td>
+                      <td style={{ textAlign: 'right' }}>{currencySymbol} {i.total.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -862,23 +865,23 @@ ${businessProfile?.receiptFooter || 'Thank you for your business!'}
               <div style={{ borderTop: '1px dashed #000', paddingTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Subtotal:</span>
-                  <span>${lastCompletedSale.subTotal.toFixed(2)}</span>
+                  <span>{currencySymbol} {lastCompletedSale.subTotal.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Tax:</span>
-                  <span>${lastCompletedSale.taxAmount.toFixed(2)}</span>
+                  <span>{currencySymbol} {lastCompletedSale.taxAmount.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '0.9375rem', borderTop: '1px solid #000', paddingTop: '0.25rem' }}>
                   <span>TOTAL:</span>
-                  <span>${lastCompletedSale.totalAmount.toFixed(2)}</span>
+                  <span>{currencySymbol} {lastCompletedSale.totalAmount.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Tendered:</span>
-                  <span>${lastCompletedSale.amountTendered.toFixed(2)}</span>
+                  <span>{currencySymbol} {lastCompletedSale.amountTendered.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Change:</span>
-                  <span>${lastCompletedSale.changeGiven.toFixed(2)}</span>
+                  <span>{currencySymbol} {lastCompletedSale.changeGiven.toFixed(2)}</span>
                 </div>
               </div>
 

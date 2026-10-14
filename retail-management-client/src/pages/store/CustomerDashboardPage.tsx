@@ -17,10 +17,12 @@ import {
 } from 'lucide-react';
 import { apiClient } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useBusiness } from '../../context/BusinessContext';
 import { Order, ApiResponse, PagedResponse, BusinessProfile } from '../../types';
 
 export const CustomerDashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const { currencySymbol } = useBusiness();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Order | null>(null);
@@ -193,7 +195,7 @@ export const CustomerDashboardPage: React.FC = () => {
                       {ord.items?.map((item) => (
                         <div key={item.id} style={{ fontSize: '0.8125rem', color: '#334155', display: 'flex', justifyContent: 'space-between', maxWidth: 420 }}>
                           <span>{item.quantity}x {item.productName}</span>
-                          <span style={{ fontWeight: 600 }}>${item.total.toFixed(2)}</span>
+                          <span style={{ fontWeight: 600 }}>{currencySymbol} {item.total.toFixed(2)}</span>
                         </div>
                       ))}
                     </div>
@@ -205,7 +207,7 @@ export const CustomerDashboardPage: React.FC = () => {
                       Fulfillment: <strong style={{ color: '#0f172a' }}>{ord.fulfillmentType === 0 ? 'Home Delivery' : 'Pickup'}</strong>
                     </div>
                     <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
-                      ${ord.totalAmount.toFixed(2)}
+                      {currencySymbol} {ord.totalAmount.toFixed(2)}
                     </div>
                     <button
                       onClick={() => setSelectedInvoice(ord)}
@@ -287,8 +289,8 @@ export const CustomerDashboardPage: React.FC = () => {
                     <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '0.5rem 0', fontWeight: 600 }}>{item.productName}</td>
                       <td style={{ padding: '0.5rem 0', textAlign: 'center' }}>{item.quantity}</td>
-                      <td style={{ padding: '0.5rem 0', textAlign: 'right' }}>${item.unitPrice.toFixed(2)}</td>
-                      <td style={{ padding: '0.5rem 0', textAlign: 'right', fontWeight: 700 }}>${item.total.toFixed(2)}</td>
+                      <td style={{ padding: '0.5rem 0', textAlign: 'right' }}>{currencySymbol} {item.unitPrice.toFixed(2)}</td>
+                      <td style={{ padding: '0.5rem 0', textAlign: 'right', fontWeight: 700 }}>{currencySymbol} {item.total.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -298,19 +300,19 @@ export const CustomerDashboardPage: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-end', borderTop: '1px solid #cbd5e1', paddingTop: '0.75rem', fontSize: '0.8125rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: 220 }}>
                   <span style={{ color: '#64748b' }}>Subtotal:</span>
-                  <span>${selectedInvoice.subTotal.toFixed(2)}</span>
+                  <span>{currencySymbol} {selectedInvoice.subTotal.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: 220 }}>
                   <span style={{ color: '#64748b' }}>Delivery Fee:</span>
-                  <span>${selectedInvoice.shippingFee.toFixed(2)}</span>
+                  <span>{currencySymbol} {selectedInvoice.shippingFee.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: 220 }}>
                   <span style={{ color: '#64748b' }}>Estimated Tax:</span>
-                  <span>${selectedInvoice.taxAmount.toFixed(2)}</span>
+                  <span>{currencySymbol} {selectedInvoice.taxAmount.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: 220, fontSize: '1rem', fontWeight: 800, borderTop: '2px solid #0f172a', paddingTop: '0.35rem', marginTop: '0.25rem' }}>
                   <span>Total Due:</span>
-                  <span style={{ color: '#2563eb' }}>${selectedInvoice.totalAmount.toFixed(2)}</span>
+                  <span style={{ color: '#2563eb' }}>{currencySymbol} {selectedInvoice.totalAmount.toFixed(2)}</span>
                 </div>
               </div>
 

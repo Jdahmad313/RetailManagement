@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Receipt, Trash2, X, AlertCircle } from 'lucide-react';
 import { Expense, ExpenseCategory, PagedResponse, ApiResponse } from '../../types';
 import { apiClient } from '../../api/client';
+import { useBusiness } from '../../context/BusinessContext';
 
 export const ExpensesAdminPage: React.FC = () => {
+  const { currencySymbol } = useBusiness();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,7 +132,7 @@ export const ExpensesAdminPage: React.FC = () => {
           </select>
 
           <div style={{ fontSize: '0.875rem', fontWeight: 700 }}>
-            Total In View: <span style={{ color: '#dc2626' }}>${totalExpenses.toFixed(2)}</span>
+            Total In View: <span style={{ color: '#dc2626' }}>{currencySymbol} {totalExpenses.toFixed(2)}</span>
           </div>
         </div>
 
@@ -168,7 +170,7 @@ export const ExpensesAdminPage: React.FC = () => {
                     {e.paymentMethod === 0 ? 'Cash' : e.paymentMethod === 1 ? 'Card' : 'Bank Transfer'}
                   </td>
                   <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#dc2626' }}>
-                    ${e.amount.toFixed(2)}
+                    {currencySymbol} {e.amount.toFixed(2)}
                   </td>
                   <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>
                     {e.recordedByUserName || 'Admin'}
@@ -228,7 +230,7 @@ export const ExpensesAdminPage: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Amount ($) *</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Amount ({currencySymbol}) *</label>
                   <input
                     type="number"
                     step="0.01"

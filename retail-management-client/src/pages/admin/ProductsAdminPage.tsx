@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Search, Edit2, Trash2, X, AlertCircle } from 'lucide-react';
 import { Product, Category, PagedResponse, ApiResponse } from '../../types';
 import { apiClient } from '../../api/client';
+import { useBusiness } from '../../context/BusinessContext';
 
 export const ProductsAdminPage: React.FC = () => {
+  const { currencySymbol } = useBusiness();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -232,12 +234,12 @@ export const ProductsAdminPage: React.FC = () => {
                     {p.barcode && <div style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>BC: {p.barcode}</div>}
                   </td>
                   <td style={{ padding: '0.75rem 1rem' }}>{p.categoryName}</td>
-                  <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>${p.purchaseCost.toFixed(2)}</td>
+                  <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{currencySymbol} {p.purchaseCost.toFixed(2)}</td>
                   <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>
-                    ${p.effectivePrice.toFixed(2)}
+                    {currencySymbol} {p.effectivePrice.toFixed(2)}
                     {p.discountPrice && (
                       <span style={{ fontSize: '0.6875rem', color: '#94a3b8', textDecoration: 'line-through', marginLeft: '0.25rem' }}>
-                        ${p.sellingPrice.toFixed(2)}
+                        {currencySymbol} {p.sellingPrice.toFixed(2)}
                       </span>
                     )}
                   </td>
@@ -354,7 +356,7 @@ export const ProductsAdminPage: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Purchase Cost ($)</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Purchase Cost ({currencySymbol})</label>
                   <input
                     type="number"
                     step="0.01"
@@ -364,7 +366,7 @@ export const ProductsAdminPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Selling Price ($) *</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Selling Price ({currencySymbol}) *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -375,7 +377,7 @@ export const ProductsAdminPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Discount Price ($)</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Discount Price ({currencySymbol})</label>
                   <input
                     type="number"
                     step="0.01"

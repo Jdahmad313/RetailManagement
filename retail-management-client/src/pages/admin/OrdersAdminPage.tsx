@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Eye, CheckCircle, XCircle, Search, X } from 'lucide-react';
 import { Order, PagedResponse, ApiResponse } from '../../types';
 import { apiClient } from '../../api/client';
+import { useBusiness } from '../../context/BusinessContext';
 
 export const OrdersAdminPage: React.FC = () => {
+  const { currencySymbol } = useBusiness();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -136,7 +138,7 @@ export const OrdersAdminPage: React.FC = () => {
                     {o.fulfillmentType === 0 ? 'Delivery' : 'Pickup'}
                   </td>
                   <td style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>
-                    ${o.totalAmount.toFixed(2)}
+                    {currencySymbol} {o.totalAmount.toFixed(2)}
                   </td>
                   <td style={{ padding: '0.75rem 1rem' }}>
                     {getStatusBadge(o.status)}
@@ -214,19 +216,19 @@ export const OrdersAdminPage: React.FC = () => {
                         <div style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>SKU: {i.sku}</div>
                       </td>
                       <td style={{ padding: '0.5rem', textAlign: 'center' }}>{i.quantity}</td>
-                      <td style={{ padding: '0.5rem', textAlign: 'right' }}>${i.unitPrice.toFixed(2)}</td>
-                      <td style={{ padding: '0.5rem 0', textAlign: 'right', fontWeight: 700 }}>${i.total.toFixed(2)}</td>
+                      <td style={{ padding: '0.5rem', textAlign: 'right' }}>{currencySymbol} {i.unitPrice.toFixed(2)}</td>
+                      <td style={{ padding: '0.5rem 0', textAlign: 'right', fontWeight: 700 }}>{currencySymbol} {i.total.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
               <div style={{ textAlign: 'right', marginTop: '0.75rem', fontSize: '0.875rem' }}>
-                <div>Subtotal: ${selectedOrder.subTotal.toFixed(2)}</div>
-                <div>Tax: ${selectedOrder.taxAmount.toFixed(2)}</div>
-                <div>Delivery: ${selectedOrder.shippingFee.toFixed(2)}</div>
+                <div>Subtotal: {currencySymbol} {selectedOrder.subTotal.toFixed(2)}</div>
+                <div>Tax: {currencySymbol} {selectedOrder.taxAmount.toFixed(2)}</div>
+                <div>Delivery: {currencySymbol} {selectedOrder.shippingFee.toFixed(2)}</div>
                 <div style={{ fontWeight: 800, fontSize: '1.125rem', marginTop: '0.25rem' }}>
-                  Total: ${selectedOrder.totalAmount.toFixed(2)}
+                  Total: {currencySymbol} {selectedOrder.totalAmount.toFixed(2)}
                 </div>
               </div>
             </div>

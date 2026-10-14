@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { BusinessProvider } from './context/BusinessContext';
 
 // Layouts
 import { StorefrontLayout } from './layouts/StorefrontLayout';
@@ -50,8 +51,9 @@ const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children
 
 export function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
+    <BusinessProvider>
+      <AuthProvider>
+        <CartProvider>
         <BrowserRouter>
           <Routes>
             {/* Storefront Routes */}
@@ -98,6 +100,7 @@ export function App() {
         </BrowserRouter>
       </CartProvider>
     </AuthProvider>
+  </BusinessProvider>
   );
 }
 
