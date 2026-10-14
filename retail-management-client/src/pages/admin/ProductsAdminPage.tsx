@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, X, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Plus, Search, Edit2, Trash2, X, AlertCircle, Camera, Scan } from 'lucide-react';
 import { Product, Category, PagedResponse, ApiResponse } from '../../types';
 import { apiClient } from '../../api/client';
 import { useBusiness } from '../../context/BusinessContext';
 import { ImagePicker } from '../../components/ImagePicker';
+import { BarcodeScannerModal, playScanBeep } from '../../components/BarcodeScannerModal';
 
 export const ProductsAdminPage: React.FC = () => {
   const { currencySymbol } = useBusiness();
@@ -16,6 +17,11 @@ export const ProductsAdminPage: React.FC = () => {
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+
+  // Hardware Barcode Scanner Buffer (USB/Bluetooth Guns)
+  const scannerBuffer = useRef<string>('');
+  const lastKeyTime = useRef<number>(0);
 
   // Form Fields
   const [sku, setSku] = useState('');
@@ -66,6 +72,44 @@ export const ProductsAdminPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [search, selectedCategory]);
+
+  // Hardware Scanner Machine Keyboard Listener (USB/Bluetooth HID guns)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!showModal) return;
+
+      const activeEl = document.activeElement as HTMLElement | null;
+      if (activeEl && activeEl.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastKeyTime.current > 120) {
+        scannerBuffer.current = '';
+      }
+      lastKeyTime.current = now;
+
+      if (e.key === 'Enter') {
+        const code = scannerBuffer.current.trim();
+        if (code.length >= 3) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (showModal) {
+            setBarcode(code);
+          } else {
+            setSearch(code);
+          }
+          playScanBeep();
+          scannerBuffer.current = '';
+        }
+      } else if (e.key.length === 1) {
+        scannerBuffer.current += e.key;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [showModal]);
 
   const openCreateModal = () => {
     setEditingProduct(null);
@@ -173,15 +217,37 @@ export const ProductsAdminPage: React.FC = () => {
 
       {/* Filter Bar */}
       <div className="card" style={{ padding: '0.875rem 1.25rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
-          <input
-            type="text"
-            placeholder="Search by SKU, barcode, name, brand..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem 1rem 0.5rem 2rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
-          />
-          <Search size={16} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+        <div style={{ position: 'relative', flex: 1, display: 'flex', gap: '0.375rem' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <input
+              type="text"
+              placeholder="Search by SKU, barcode, name, brand..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: '100%', padding: '0.5rem 1rem 0.5rem 2rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
+            />
+            <Search size={16} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowBarcodeScanner(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.375rem',
+              padding: '0.5rem 0.75rem',
+              backgroundColor: '#eff6ff',
+              color: '#2563eb',
+              border: '1px solid #bfdbfe',
+              borderRadius: '0.375rem',
+              fontWeight: 600,
+              fontSize: '0.8125rem',
+              cursor: 'pointer'
+            }}
+            title="Scan barcode with camera to filter"
+          >
+            <Camera size={15} /> Scan
+          </button>
         </div>
 
         <select
@@ -299,14 +365,57 @@ export const ProductsAdminPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Barcode (EAN/UPC)</label>
-                  <input
-                    type="text"
-                    value={barcode}
-                    onChange={(e) => setBarcode(e.target.value)}
-                    placeholder="890123450001"
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.25rem' }}
-                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Barcode (EAN/UPC)</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowBarcodeScanner(true)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        background: 'none',
+                        border: 'none',
+                        color: '#2563eb',
+                        fontWeight: 600,
+                        fontSize: '0.6875rem',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                    >
+                      <Camera size={13} /> Camera Scan
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.375rem' }}>
+                    <input
+                      type="text"
+                      value={barcode}
+                      onChange={(e) => setBarcode(e.target.value)}
+                      placeholder="e.g. 896101400101"
+                      style={{ flex: 1, padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.25rem', fontSize: '0.8125rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowBarcodeScanner(true)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '0.5rem 0.625rem',
+                        backgroundColor: '#eff6ff',
+                        color: '#2563eb',
+                        border: '1px solid #bfdbfe',
+                        borderRadius: '0.25rem',
+                        cursor: 'pointer'
+                      }}
+                      title="Open device camera barcode scanner"
+                    >
+                      <Scan size={16} />
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: '#64748b', marginTop: '0.25rem' }}>
+                    Point camera or trigger barcode scanner gun
+                  </div>
                 </div>
               </div>
 
@@ -458,6 +567,20 @@ export const ProductsAdminPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Camera Barcode Scanner Modal */}
+      <BarcodeScannerModal
+        isOpen={showBarcodeScanner}
+        onClose={() => setShowBarcodeScanner(false)}
+        onScan={(scannedCode) => {
+          if (showModal) {
+            setBarcode(scannedCode);
+          } else {
+            setSearch(scannedCode);
+          }
+        }}
+        title={showModal ? 'Scan Product Barcode' : 'Scan to Find Product'}
+      />
     </div>
   );
 };
