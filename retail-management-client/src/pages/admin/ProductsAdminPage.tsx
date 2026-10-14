@@ -3,6 +3,7 @@ import { Plus, Search, Edit2, Trash2, X, AlertCircle } from 'lucide-react';
 import { Product, Category, PagedResponse, ApiResponse } from '../../types';
 import { apiClient } from '../../api/client';
 import { useBusiness } from '../../context/BusinessContext';
+import { ImagePicker } from '../../components/ImagePicker';
 
 export const ProductsAdminPage: React.FC = () => {
   const { currencySymbol } = useBusiness();
@@ -414,16 +415,13 @@ export const ProductsAdminPage: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Image URL</label>
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://..."
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.25rem' }}
-                />
-              </div>
+              <ImagePicker
+                label="Product Image"
+                value={imageUrl}
+                onChange={setImageUrl}
+                recommendedText="Select from gallery/camera or paste web link (Auto-compressed)"
+                maxDimension={800}
+              />
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>
