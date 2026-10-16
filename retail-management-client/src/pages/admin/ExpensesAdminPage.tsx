@@ -119,7 +119,7 @@ export const ExpensesAdminPage: React.FC = () => {
 
       {/* Filter and Table */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '0.875rem 1.25rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '0.875rem 1.25rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
@@ -136,61 +136,63 @@ export const ExpensesAdminPage: React.FC = () => {
           </div>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
-          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-            <tr>
-              <th style={{ padding: '0.75rem 1.25rem' }}>Date</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Title & Description</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Category</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Method</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Amount</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Recorded By</th>
-              <th style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>Loading expenses...</td></tr>
-            ) : expenses.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>No expenses recorded.</td></tr>
-            ) : (
-              expenses.map((e) => (
-                <tr key={e.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '0.75rem 1.25rem', color: '#64748b' }}>
-                    {new Date(e.expenseDateUtc).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <div style={{ fontWeight: 600, color: '#0f172a' }}>{e.title}</div>
-                    <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>{e.description || 'No notes'}</div>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <span className="badge badge-info">{e.categoryName}</span>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>
-                    {e.paymentMethod === 0 ? 'Cash' : e.paymentMethod === 1 ? 'Card' : 'Bank Transfer'}
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#dc2626' }}>
-                    {currencySymbol} {e.amount.toFixed(2)}
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>
-                    {e.recordedByUserName || 'Admin'}
-                  </td>
-                  <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>
-                    <button onClick={() => handleDeleteExpense(e.id)} style={{ color: '#ef4444' }} title="Delete">
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <div className="admin-table-container">
+          <table style={{ width: '100%', minWidth: 700, borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
+            <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+              <tr>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Date</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Title & Description</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Category</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Method</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Amount</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Recorded By</th>
+                <th className="sticky-action-header" style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>Loading expenses...</td></tr>
+              ) : expenses.length === 0 ? (
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>No expenses recorded.</td></tr>
+              ) : (
+                expenses.map((e) => (
+                  <tr key={e.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '0.75rem 1.25rem', color: '#64748b' }}>
+                      {new Date(e.expenseDateUtc).toLocaleDateString()}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <div style={{ fontWeight: 600, color: '#0f172a' }}>{e.title}</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>{e.description || 'No notes'}</div>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <span className="badge badge-info">{e.categoryName}</span>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>
+                      {e.paymentMethod === 0 ? 'Cash' : e.paymentMethod === 1 ? 'Card' : 'Bank Transfer'}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#dc2626' }}>
+                      {currencySymbol} {e.amount.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>
+                      {e.recordedByUserName || 'Admin'}
+                    </td>
+                    <td className="sticky-action-col" style={{ padding: '0.75rem 1.25rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button onClick={() => handleDeleteExpense(e.id)} style={{ color: '#ef4444', padding: '0.25rem' }} title="Delete">
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Record Expense Modal */}
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
-          <div className="card" style={{ width: '100%', maxWidth: 480, padding: '1.75rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Record Business Expense</h3>
               <button onClick={() => setShowModal(false)}><X size={18} /></button>

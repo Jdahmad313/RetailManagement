@@ -74,7 +74,8 @@ public class ProductService : IProductService
             "price" => isDesc ? query.OrderByDescending(p => p.DiscountPrice ?? p.SellingPrice) : query.OrderBy(p => p.DiscountPrice ?? p.SellingPrice),
             "name" => isDesc ? query.OrderByDescending(p => p.Name) : query.OrderBy(p => p.Name),
             "stock" => isDesc ? query.OrderByDescending(p => p.StockQuantity) : query.OrderBy(p => p.StockQuantity),
-            _ => isDesc ? query.OrderByDescending(p => p.CreatedAtUtc) : query.OrderBy(p => p.CreatedAtUtc)
+            "created" or "date" or "newest" => isDesc ? query.OrderByDescending(p => p.CreatedAtUtc) : query.OrderBy(p => p.CreatedAtUtc),
+            _ => isDesc ? query.OrderByDescending(p => p.CreatedAtUtc) : (string.IsNullOrEmpty(filter.SortDirection) ? query.OrderByDescending(p => p.CreatedAtUtc) : query.OrderBy(p => p.CreatedAtUtc))
         };
 
         var totalCount = await query.CountAsync(ct);

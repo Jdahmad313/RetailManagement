@@ -54,7 +54,14 @@ public class OtpService : IOtpService
         // If target looks like an email, send via EmailService
         if (normalizedTarget.Contains('@'))
         {
-            await _emailService.SendOtpEmailAsync(normalizedTarget, recipientName, code, ct);
+            if (purpose == "PasswordReset")
+            {
+                await _emailService.SendPasswordResetOtpEmailAsync(normalizedTarget, recipientName, code, ct);
+            }
+            else
+            {
+                await _emailService.SendOtpEmailAsync(normalizedTarget, recipientName, code, ct);
+            }
         }
 
         return code;

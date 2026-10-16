@@ -308,7 +308,7 @@ export const CheckoutPage: React.FC = () => {
                     onChange={() => setPaymentMethod(1)}
                   />
                   <CreditCard size={18} />
-                  <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Credit / Debit Card (Apex Integrated Gateway)</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Credit / Debit Card (Integrated Gateway)</span>
                 </label>
               )}
 

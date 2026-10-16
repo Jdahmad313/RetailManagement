@@ -19,6 +19,7 @@ import { CustomerDashboardPage } from './pages/store/CustomerDashboardPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { ProfilePage } from './pages/auth/ProfilePage';
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 
 // Admin & POS Pages
 import { DashboardPage } from './pages/admin/DashboardPage';
@@ -68,6 +69,7 @@ export function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             </Route>
 
             {/* Admin & POS Routes */}

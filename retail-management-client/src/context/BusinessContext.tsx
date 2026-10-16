@@ -10,8 +10,34 @@ interface BusinessContextType {
   loading: boolean;
 }
 
+export const defaultBusinessProfile: BusinessProfile = {
+  id: 'mukhtar-bashir-default',
+  businessName: 'Mukhtar Bashir Merchant Karyana Store',
+  tagline: 'Taza Karyana, Bulk Flours, Nimko & Village General Store',
+  address: 'Jurian, Hafizabad, Punjab, Pakistan',
+  phone: '+923446583468',
+  email: 'mukhtarbashirkaryana@gmail.com',
+  currencyCode: 'PKR',
+  currencySymbol: 'Rs.',
+  timeZone: 'Asia/Karachi',
+  defaultTaxRate: 0,
+  pricesIncludeTax: true,
+  invoicePrefix: 'MBK-',
+  receiptHeader: 'Mukhtar Bashir Merchant Karyana Store - Jurian, Hafizabad',
+  receiptFooter: 'Shukriya! Mukhtar Bashir Merchant Karyana par tashreef awri ka bohot shukriya. Phone: 03446583468',
+  deliveryFee: 0,
+  freeDeliveryThreshold: 1000,
+  allowPickup: true,
+  allowDelivery: true,
+  allowNegativeStock: false,
+  whatsAppNumber: '03446583468',
+  bankTransferInstructions: 'Easypaisa or Raast at 03446583468 and share the screenshot on same number (03446583468)',
+  enabledPaymentMethodsJson: '["CashOnDelivery","BankTransfer"]',
+  operatingHoursJson: '{"Monday-Sunday":"8:00 AM - 10:00 PM"}',
+};
+
 const BusinessContext = createContext<BusinessContextType>({
-  profile: null,
+  profile: defaultBusinessProfile,
   currencySymbol: 'Rs.',
   formatPrice: (amount) => `Rs. ${(amount || 0).toFixed(2)}`,
   refreshProfile: async () => {},
@@ -19,12 +45,12 @@ const BusinessContext = createContext<BusinessContextType>({
 });
 
 export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [profile, setProfile] = useState<BusinessProfile | null>(() => {
+  const [profile, setProfile] = useState<BusinessProfile>(() => {
     try {
       const saved = localStorage.getItem('business_profile');
-      return saved ? JSON.parse(saved) : null;
+      return saved ? { ...defaultBusinessProfile, ...JSON.parse(saved) } : defaultBusinessProfile;
     } catch {
-      return null;
+      return defaultBusinessProfile;
     }
   });
   const [loading, setLoading] = useState(false);

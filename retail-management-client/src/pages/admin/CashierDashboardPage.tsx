@@ -160,8 +160,8 @@ export const CashierDashboardPage: React.FC = () => {
             </Link>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
+          <div className="admin-table-container">
+            <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b' }}>
                   <th style={{ padding: '0.75rem 0.5rem' }}>Receipt #</th>
@@ -169,7 +169,7 @@ export const CashierDashboardPage: React.FC = () => {
                   <th style={{ padding: '0.75rem 0.5rem' }}>Customer</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>Items</th>
                   <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>Total</th>
-                  <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>Action</th>
+                  <th className="sticky-action-header" style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -188,9 +188,9 @@ export const CashierDashboardPage: React.FC = () => {
                       {sale.items?.length || 1}
                     </td>
                     <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>
-                      ${sale.totalAmount.toFixed(2)}
+                      {currencySymbol} {sale.totalAmount.toFixed(2)}
                     </td>
-                    <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>
+                    <td className="sticky-action-col" style={{ padding: '0.75rem 0.5rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       <button
                         onClick={() => setSelectedReceipt(sale)}
                         className="btn btn-secondary"
@@ -209,8 +209,8 @@ export const CashierDashboardPage: React.FC = () => {
 
       {/* Printable Receipt Modal */}
       {selectedReceipt && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
-          <div className="card" style={{ width: 420, padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: '1rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: 440, padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <span className="badge badge-success">Completed Transaction</span>
               <button onClick={() => setSelectedReceipt(null)}><X size={18} /></button>
@@ -218,7 +218,7 @@ export const CashierDashboardPage: React.FC = () => {
 
             <div id="printable-cashier-receipt" style={{ fontFamily: 'monospace', fontSize: '0.8125rem', lineHeight: 1.4, border: '1px dashed #cbd5e1', padding: '1rem', backgroundColor: '#ffffff', color: '#000000' }}>
               <div style={{ textAlign: 'center', marginBottom: '0.75rem' }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 800 }}>{businessProfile?.businessName || 'Apex Retail Store'}</h3>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 800 }}>{businessProfile?.businessName || 'Mukhtar Bashir Merchant Karyana Store'}</h3>
                 <div>{businessProfile?.address}</div>
                 <div>{businessProfile?.phone}</div>
                 <div>{businessProfile?.receiptHeader}</div>

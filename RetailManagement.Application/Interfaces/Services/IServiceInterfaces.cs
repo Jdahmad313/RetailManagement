@@ -30,6 +30,11 @@ public interface IAuthService
     // Profile & Password Updation for all users
     Task<UserDto> UpdateProfileAsync(string userId, UpdateProfileDto dto, CancellationToken ct = default);
     Task<bool> ChangePasswordAsync(string userId, ChangePasswordDto dto, CancellationToken ct = default);
+
+    // Forgot Password via OTP for all users
+    Task<string> InitiateForgotPasswordOtpAsync(ForgotPasswordInitiateDto dto, CancellationToken ct = default);
+    Task<bool> ResetPasswordWithOtpAsync(ResetPasswordWithOtpDto dto, CancellationToken ct = default);
+    Task<bool> ResendForgotPasswordOtpAsync(ForgotPasswordInitiateDto dto, CancellationToken ct = default);
 }
 
 public interface ICategoryService
