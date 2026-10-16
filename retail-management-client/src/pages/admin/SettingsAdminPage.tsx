@@ -16,14 +16,14 @@ export const SettingsAdminPage: React.FC = () => {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [currencyCode, setCurrencyCode] = useState('USD');
-  const [currencySymbol, setCurrencySymbol] = useState('$');
-  const [defaultTaxRate, setDefaultTaxRate] = useState<number>(8.5);
+  const [currencyCode, setCurrencyCode] = useState('PKR');
+  const [currencySymbol, setCurrencySymbol] = useState('Rs.');
+  const [defaultTaxRate, setDefaultTaxRate] = useState<number>(0);
   const [invoicePrefix, setInvoicePrefix] = useState('INV-');
   const [receiptHeader, setReceiptHeader] = useState('');
   const [receiptFooter, setReceiptFooter] = useState('');
-  const [deliveryFee, setDeliveryFee] = useState<number>(5.0);
-  const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState<number>(75.0);
+  const [deliveryFee, setDeliveryFee] = useState<number>(50.0);
+  const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState<number>(1000.0);
   const [allowPickup, setAllowPickup] = useState(true);
   const [allowDelivery, setAllowDelivery] = useState(true);
   const [allowNegativeStock, setAllowNegativeStock] = useState(false);
@@ -138,7 +138,7 @@ export const SettingsAdminPage: React.FC = () => {
           <h3 style={{ fontSize: '1.0625rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Store size={18} color="#2563eb" /> Store Identity
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+          <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Business Name *</label>
               <input
@@ -160,7 +160,7 @@ export const SettingsAdminPage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1rem' }}>
+          <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Physical Store Address *</label>
               <input
@@ -195,7 +195,7 @@ export const SettingsAdminPage: React.FC = () => {
                 type="text"
                 value={whatsAppNumber}
                 onChange={(e) => setWhatsAppNumber(e.target.value)}
-                placeholder="+1 (555) 019-2834"
+                placeholder="+92 344 6583468"
                 style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.25rem' }}
               />
             </div>
@@ -243,19 +243,19 @@ export const SettingsAdminPage: React.FC = () => {
                   else setEnabledPaymentMethods(enabledPaymentMethods.filter((m) => m !== 'BankTransfer'));
                 }}
               />
-              <strong>Direct Bank Transfer / Wire</strong>
+              <strong>Direct Bank Transfer / Easypaisa / Raast</strong>
             </label>
           </div>
 
           <div>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-              Bank Transfer Instructions & Account Details
+              Bank / Mobile Wallet Transfer Instructions & Account Details
             </label>
             <textarea
               rows={2}
               value={bankTransferInstructions}
               onChange={(e) => setBankTransferInstructions(e.target.value)}
-              placeholder="e.g. Bank: Standard Chartered, Title: Apex Retail Ltd, IBAN/Account: PK00SCBL12345678901234"
+              placeholder="e.g. Easypaisa / Raast: 03446583468, Account Title: Mukhtar Bashir"
               style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.25rem', fontSize: '0.8125rem' }}
             />
           </div>
@@ -264,14 +264,14 @@ export const SettingsAdminPage: React.FC = () => {
         {/* Currency & Tax */}
         <div className="card">
           <h3 style={{ fontSize: '1.0625rem', fontWeight: 700, marginBottom: '1rem' }}>Currency & Sales Tax</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+          <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Currency Code</label>
               <input
                 type="text"
                 value={currencyCode}
                 onChange={(e) => setCurrencyCode(e.target.value)}
-                placeholder="USD"
+                placeholder="PKR"
                 style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.25rem' }}
               />
             </div>
@@ -281,7 +281,7 @@ export const SettingsAdminPage: React.FC = () => {
                 type="text"
                 value={currencySymbol}
                 onChange={(e) => setCurrencySymbol(e.target.value)}
-                placeholder="$"
+                placeholder="Rs."
                 style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '0.25rem' }}
               />
             </div>
@@ -301,9 +301,9 @@ export const SettingsAdminPage: React.FC = () => {
         {/* Fulfillment & Inventory Rules */}
         <div className="card">
           <h3 style={{ fontSize: '1.0625rem', fontWeight: 700, marginBottom: '1rem' }}>Fulfillment & Inventory Policies</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+          <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Standard Delivery Fee ($)</label>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Standard Delivery Fee ({currencySymbol})</label>
               <input
                 type="number"
                 step="0.01"
@@ -313,7 +313,7 @@ export const SettingsAdminPage: React.FC = () => {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Free Delivery Threshold ($)</label>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Free Delivery Threshold ({currencySymbol})</label>
               <input
                 type="number"
                 step="0.01"

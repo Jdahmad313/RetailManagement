@@ -50,6 +50,30 @@ public class AuthController : BaseApiController
         return Success(result, "A new verification code has been dispatched.");
     }
 
+    [HttpPost("forgot-password-initiate")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResponse<object>>> ForgotPasswordInitiate([FromBody] ForgotPasswordInitiateDto dto, CancellationToken ct)
+    {
+        var email = await _authService.InitiateForgotPasswordOtpAsync(dto, ct);
+        return Success<object>(new { email }, "A 6-digit password reset OTP has been sent to your email address.");
+    }
+
+    [HttpPost("reset-password-otp")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResponse<bool>>> ResetPasswordWithOtp([FromBody] ResetPasswordWithOtpDto dto, CancellationToken ct)
+    {
+        var result = await _authService.ResetPasswordWithOtpAsync(dto, ct);
+        return Success(result, "Password has been successfully reset! You can now log in with your new password.");
+    }
+
+    [HttpPost("resend-forgot-password-otp")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResponse<bool>>> ResendForgotPasswordOtp([FromBody] ForgotPasswordInitiateDto dto, CancellationToken ct)
+    {
+        var result = await _authService.ResendForgotPasswordOtpAsync(dto, ct);
+        return Success(result, "A fresh password reset code has been sent to your email.");
+    }
+
     [HttpPost("cashiers/invite")]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<ActionResult<ApiResponse<UserDto>>> InviteCashier([FromBody] InviteCashierDto dto, CancellationToken ct)

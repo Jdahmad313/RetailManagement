@@ -15,28 +15,17 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { BusinessProfile, ApiResponse } from '../types';
-import { apiClient } from '../api/client';
+import { useBusiness } from '../context/BusinessContext';
 import { FeedbackModal } from '../components/FeedbackModal';
 
 export const StorefrontLayout: React.FC = () => {
   const { itemCount } = useCart();
   const { user, isAuthenticated, logout, isCashier, isAdmin } = useAuth();
-  const [profile, setProfile] = useState<BusinessProfile | null>(null);
+  const { profile } = useBusiness();
   const [search, setSearch] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    apiClient.get<ApiResponse<BusinessProfile>>('/businesssettings')
-      .then((res) => {
-        if (res.data.success) {
-          setProfile(res.data.data);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +35,7 @@ export const StorefrontLayout: React.FC = () => {
     }
   };
 
-  const rawPhone = profile?.whatsAppNumber || profile?.phone || '+15550192834';
+  const rawPhone = profile?.whatsAppNumber || profile?.phone || '+923446583468';
   const cleanPhone = rawPhone.replace(/\D/g, '');
 
   return (
@@ -55,10 +44,10 @@ export const StorefrontLayout: React.FC = () => {
       <div style={{ backgroundColor: '#1e293b', color: '#94a3b8', padding: '0.5rem 0', fontSize: '0.8125rem' }}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <span>📍 {profile?.address || 'Storefront & Online Dispatch'}</span>
+            <span>📍 {profile?.address || 'Jurian, Hafizabad, Punjab, Pakistan'}</span>
             <span style={{ display: 'none', margin: '0 0.5rem' }}>|</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-              📞 <a href={`tel:${profile?.phone || '+15550192834'}`} style={{ color: '#cbd5e1' }}>{profile?.phone || '+1 (555) 019-2834'}</a>
+              📞 <a href={`tel:${profile?.phone || '+923446583468'}`} style={{ color: '#cbd5e1' }}>{profile?.phone || '+92 344 6583468'}</a>
             </span>
           </div>
 
@@ -107,7 +96,7 @@ export const StorefrontLayout: React.FC = () => {
             </div>
             <div>
               <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1, margin: 0 }}>
-                {profile?.businessName || 'Apex Retail'}
+                {profile?.businessName || 'Mukhtar Bashir Merchant Karyana Store'}
               </h1>
               <p style={{ fontSize: '0.7rem', color: '#64748b', margin: '2px 0 0' }}>
                 {profile?.tagline || 'Everyday Essentials & Quality Store'}
@@ -306,7 +295,7 @@ export const StorefrontLayout: React.FC = () => {
       <div style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', zIndex: 90 }}>
         {/* WhatsApp Button */}
         <a
-          href={`https://wa.me/${cleanPhone}?text=Hello%20Apex%20Retail,%20I%20have%20an%20inquiry%20regarding%20products.`}
+          href={`https://wa.me/${cleanPhone}?text=Hello%20Mukhtar%20Bashir%20Karyana,%20I%20have%20an%20inquiry%20regarding%20products.`}
           target="_blank"
           rel="noopener noreferrer"
           title="Chat with us on WhatsApp"
@@ -331,7 +320,7 @@ export const StorefrontLayout: React.FC = () => {
 
         {/* Call Button */}
         <a
-          href={`tel:${profile?.phone || '+15550192834'}`}
+          href={`tel:${profile?.phone || '+923446583468'}`}
           title="Call Customer Support"
           style={{
             width: 48,
@@ -359,10 +348,10 @@ export const StorefrontLayout: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
             <div>
               <h3 style={{ color: '#ffffff', fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.75rem' }}>
-                {profile?.businessName || 'Apex Retail'}
+                {profile?.businessName || 'Mukhtar Bashir Merchant Karyana Store'}
               </h3>
               <p style={{ fontSize: '0.875rem', color: '#94a3b8', lineHeight: 1.6 }}>
-                Modern verified e-commerce retail store with real-time stock, premium products, and fast home delivery.
+                Small general store & karyana merchant providing high quality groceries, flours, bulk packs, nimko, and daily essentials in Jurian, Hafizabad.
               </p>
             </div>
             <div>
@@ -370,15 +359,15 @@ export const StorefrontLayout: React.FC = () => {
                 Contact & Support
               </h4>
               <p style={{ fontSize: '0.875rem', color: '#94a3b8', lineHeight: 1.6 }}>
-                📍 {profile?.address}<br />
-                ✉️ {profile?.email}<br />
-                📞 {profile?.phone}<br />
-                💬 WhatsApp: {profile?.whatsAppNumber || profile?.phone}
+                📍 {profile?.address || 'Jurian, Hafizabad, Punjab, Pakistan'}<br />
+                ✉️ {profile?.email || 'mukhtarbashirkaryana@gmail.com'}<br />
+                📞 {profile?.phone || '+923446583468'}<br />
+                💬 WhatsApp: {profile?.whatsAppNumber || '03446583468'}
               </p>
             </div>
             <div>
               <h4 style={{ color: '#ffffff', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>
-                Help & Community
+                Payment & Fulfillment
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.875rem' }}>
                 <button
@@ -387,13 +376,13 @@ export const StorefrontLayout: React.FC = () => {
                 >
                   💡 Send Suggestion or Feedback
                 </button>
-                <span style={{ color: '#94a3b8' }}>Free delivery above {profile?.currencySymbol}{profile?.freeDeliveryThreshold || 75.0}</span>
-                <span style={{ color: '#94a3b8' }}>14-day hassle-free in-store returns</span>
+                <span style={{ color: '#94a3b8' }}>Easypaisa / Raast / Cash on Delivery</span>
+                <span style={{ color: '#94a3b8' }}>Local delivery & store pickup in Jurian</span>
               </div>
             </div>
           </div>
           <div style={{ borderTop: '1px solid #1e293b', paddingTop: '1.5rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', fontSize: '0.75rem', color: '#64748b' }}>
-            <div>© {new Date().getFullYear()} {profile?.businessName || 'Apex Retail'}. All rights reserved.</div>
+            <div>© {new Date().getFullYear()} {profile?.businessName || 'Mukhtar Bashir Merchant Karyana Store'}. All rights reserved.</div>
             <div>Powered by ASP.NET Core Clean Architecture & React TypeScript</div>
           </div>
         </div>

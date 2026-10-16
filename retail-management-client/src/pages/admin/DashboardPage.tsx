@@ -93,7 +93,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Financial Health Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
         <div className="card" style={{ backgroundColor: '#ffffff' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -131,7 +131,7 @@ export const DashboardPage: React.FC = () => {
             <span style={{ fontSize: '0.6875rem', color: '#64748b' }}>Active Catalog</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
             <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.5rem', textAlign: 'center' }}>
               <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a' }}>{data.totalProducts}</div>
               <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Total Active Products</div>
@@ -154,7 +154,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* 7-Day Sales Trend & Top Products Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
         {/* Sales Trend Bar Visual */}
         <div className="card">
           <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>7-Day Revenue Trend</h3>
@@ -165,7 +165,7 @@ export const DashboardPage: React.FC = () => {
               return (
                 <div key={t.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', height: '100%', justifyContent: 'flex-end' }}>
                   <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#0f172a' }}>
-                    ${t.totalSales.toFixed(0)}
+                    {currencySymbol} {t.totalSales.toFixed(0)}
                   </div>
                   <div
                     style={{
@@ -175,7 +175,7 @@ export const DashboardPage: React.FC = () => {
                       backgroundColor: '#3b82f6',
                       borderRadius: '0.25rem 0.25rem 0 0',
                     }}
-                    title={`Online: $${t.onlineSales} | POS: $${t.posSales}`}
+                    title={`Online: ${currencySymbol} ${t.onlineSales} | POS: ${currencySymbol} ${t.posSales}`}
                   />
                   <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>
                     {t.date.slice(5)}

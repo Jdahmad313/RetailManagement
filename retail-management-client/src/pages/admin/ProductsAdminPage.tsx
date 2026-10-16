@@ -264,81 +264,83 @@ export const ProductsAdminPage: React.FC = () => {
 
       {/* Products Table */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
-          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-            <tr>
-              <th style={{ padding: '0.75rem 1.25rem' }}>Item</th>
-              <th style={{ padding: '0.75rem 1rem' }}>SKU / Barcode</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Category</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Cost</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Price</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Stock</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-              <th style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Loading catalog...</td></tr>
-            ) : products.length === 0 ? (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>No products found.</td></tr>
-            ) : (
-              products.map((p) => (
-                <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <img
-                      src={p.imageUrl || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=80'}
-                      alt={p.name}
-                      style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '0.25rem', border: '1px solid #e2e8f0' }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: 600, color: '#0f172a' }}>{p.name}</div>
-                      <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>{p.brand && `${p.brand} • `}{p.unit}</div>
-                    </div>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace' }}>
-                    <div>{p.sku}</div>
-                    {p.barcode && <div style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>BC: {p.barcode}</div>}
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>{p.categoryName}</td>
-                  <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{currencySymbol} {p.purchaseCost.toFixed(2)}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>
-                    {currencySymbol} {p.effectivePrice.toFixed(2)}
-                    {p.discountPrice && (
-                      <span style={{ fontSize: '0.6875rem', color: '#94a3b8', textDecoration: 'line-through', marginLeft: '0.25rem' }}>
-                        {currencySymbol} {p.sellingPrice.toFixed(2)}
+        <div className="admin-table-container">
+          <table style={{ width: '100%', minWidth: 840, borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
+            <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+              <tr>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Item</th>
+                <th style={{ padding: '0.75rem 1rem' }}>SKU / Barcode</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Category</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Cost</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Price</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Stock</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                <th className="sticky-action-header" style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Loading catalog...</td></tr>
+              ) : products.length === 0 ? (
+                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>No products found.</td></tr>
+              ) : (
+                products.map((p) => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <img
+                        src={p.imageUrl || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=80'}
+                        alt={p.name}
+                        style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '0.25rem', border: '1px solid #e2e8f0' }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 600, color: '#0f172a' }}>{p.name}</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>{p.brand && `${p.brand} • `}{p.unit}</div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace' }}>
+                      <div>{p.sku}</div>
+                      {p.barcode && <div style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>BC: {p.barcode}</div>}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>{p.categoryName}</td>
+                    <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{currencySymbol} {p.purchaseCost.toFixed(2)}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>
+                      {currencySymbol} {p.effectivePrice.toFixed(2)}
+                      {p.discountPrice && (
+                        <span style={{ fontSize: '0.6875rem', color: '#94a3b8', textDecoration: 'line-through', marginLeft: '0.25rem' }}>
+                          {currencySymbol} {p.sellingPrice.toFixed(2)}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <span className={`badge ${p.stockQuantity <= 0 ? 'badge-danger' : p.stockQuantity <= p.reorderThreshold ? 'badge-warning' : 'badge-success'}`}>
+                        {p.stockQuantity} {p.unit}
                       </span>
-                    )}
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <span className={`badge ${p.stockQuantity <= 0 ? 'badge-danger' : p.stockQuantity <= p.reorderThreshold ? 'badge-warning' : 'badge-success'}`}>
-                      {p.stockQuantity} {p.unit}
-                    </span>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <span className={`badge ${p.isActive ? 'badge-success' : 'badge-danger'}`}>
-                      {p.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>
-                    <button onClick={() => openEditModal(p)} style={{ color: '#2563eb', marginRight: '0.75rem' }} title="Edit">
-                      <Edit2 size={16} />
-                    </button>
-                    <button onClick={() => handleDeleteProduct(p.id)} style={{ color: '#ef4444' }} title="Delete">
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <span className={`badge ${p.isActive ? 'badge-success' : 'badge-danger'}`}>
+                        {p.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="sticky-action-col" style={{ padding: '0.75rem 1.25rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button onClick={() => openEditModal(p)} style={{ color: '#2563eb', marginRight: '0.75rem', padding: '0.25rem' }} title="Edit">
+                        <Edit2 size={16} />
+                      </button>
+                      <button onClick={() => handleDeleteProduct(p.id)} style={{ color: '#ef4444', padding: '0.25rem' }} title="Delete">
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Add / Edit Product Modal */}
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
-          <div className="card" style={{ width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
                 {editingProduct ? 'Edit Product' : 'Add New Product'}
@@ -353,7 +355,7 @@ export const ProductsAdminPage: React.FC = () => {
             )}
 
             <form onSubmit={handleSaveProduct} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>SKU *</label>
                   <input
@@ -430,7 +432,7 @@ export const ProductsAdminPage: React.FC = () => {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+              <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Category *</label>
                   <select
@@ -464,7 +466,7 @@ export const ProductsAdminPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+              <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Purchase Cost ({currencySymbol})</label>
                   <input
@@ -499,7 +501,7 @@ export const ProductsAdminPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Initial Stock</label>
                   <input

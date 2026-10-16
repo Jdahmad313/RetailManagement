@@ -19,9 +19,11 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useBusiness } from '../context/BusinessContext';
 
 export const AdminLayout: React.FC = () => {
   const { user, logout, isCashier, isAdmin, isManager } = useAuth();
+  const { profile } = useBusiness();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -81,7 +83,9 @@ export const AdminLayout: React.FC = () => {
               <Store size={20} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>Apex Portal</h2>
+              <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#ffffff', margin: 0, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={profile?.businessName}>
+                {profile?.businessName || 'Mukhtar Bashir'}
+              </h2>
               <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                 {isAdmin ? 'Admin Portal' : 'Cashier Suite'}
               </span>
@@ -178,7 +182,7 @@ export const AdminLayout: React.FC = () => {
               <Menu size={22} />
             </button>
             <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>
-              Apex Retail Management Suite
+              {profile?.businessName || 'Mukhtar Bashir Merchant Karyana Store'} • Management Suite
             </span>
           </div>
 

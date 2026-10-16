@@ -107,69 +107,71 @@ export const OrdersAdminPage: React.FC = () => {
 
       {/* Orders Table */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
-          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-            <tr>
-              <th style={{ padding: '0.75rem 1.25rem' }}>Order Number</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Customer</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Type</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Total</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Date</th>
-              <th style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>Loading orders...</td></tr>
-            ) : orders.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>No orders found.</td></tr>
-            ) : (
-              orders.map((o) => (
-                <tr key={o.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '0.75rem 1.25rem', fontWeight: 700, fontFamily: 'monospace' }}>
-                    {o.orderNumber}
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <div style={{ fontWeight: 600, color: '#0f172a' }}>{o.customerName}</div>
-                    <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>{o.customerEmail}</div>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    {o.fulfillmentType === 0 ? 'Delivery' : 'Pickup'}
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>
-                    {currencySymbol} {o.totalAmount.toFixed(2)}
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    {getStatusBadge(o.status)}
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>
-                    {new Date(o.createdAtUtc).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>
-                    <button
-                      onClick={() => {
-                        setSelectedOrder(o);
-                        setNewStatus(o.status);
-                        setCancelReason('');
-                      }}
-                      className="btn btn-secondary"
-                      style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem' }}
-                    >
-                      <Eye size={14} /> View / Manage
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <div className="admin-table-container">
+          <table style={{ width: '100%', minWidth: 780, borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
+            <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+              <tr>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Order Number</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Customer</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Type</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Total</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Date</th>
+                <th className="sticky-action-header" style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>Loading orders...</td></tr>
+              ) : orders.length === 0 ? (
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>No orders found.</td></tr>
+              ) : (
+                orders.map((o) => (
+                  <tr key={o.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '0.75rem 1.25rem', fontWeight: 700, fontFamily: 'monospace' }}>
+                      {o.orderNumber}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <div style={{ fontWeight: 600, color: '#0f172a' }}>{o.customerName}</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>{o.customerEmail}</div>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      {o.fulfillmentType === 0 ? 'Delivery' : 'Pickup'}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>
+                      {currencySymbol} {o.totalAmount.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      {getStatusBadge(o.status)}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>
+                      {new Date(o.createdAtUtc).toLocaleDateString()}
+                    </td>
+                    <td className="sticky-action-col" style={{ padding: '0.75rem 1.25rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button
+                        onClick={() => {
+                          setSelectedOrder(o);
+                          setNewStatus(o.status);
+                          setCancelReason('');
+                        }}
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem' }}
+                      >
+                        <Eye size={14} /> View / Manage
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Order Detail Modal */}
       {selectedOrder && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
-          <div className="card" style={{ width: '100%', maxWidth: 600, maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Order Details: {selectedOrder.orderNumber}</h3>
@@ -180,7 +182,7 @@ export const OrdersAdminPage: React.FC = () => {
 
             {/* Customer & Fulfillment Info */}
             <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.25rem', fontSize: '0.8125rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
                 <div>
                   <strong>Customer: </strong> {selectedOrder.customerName} ({selectedOrder.customerEmail})
                   {selectedOrder.customerPhone && <div><strong>Phone: </strong> {selectedOrder.customerPhone}</div>}
@@ -199,7 +201,8 @@ export const OrdersAdminPage: React.FC = () => {
             {/* Order Items Table */}
             <div style={{ marginBottom: '1.25rem' }}>
               <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.5rem' }}>Ordered Items</h4>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem', textAlign: 'left' }}>
+              <div style={{ overflowX: 'auto', width: '100%' }}>
+                <table style={{ width: '100%', minWidth: 420, borderCollapse: 'collapse', fontSize: '0.8125rem', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>
                     <th style={{ padding: '0.375rem 0' }}>Product</th>
@@ -222,6 +225,7 @@ export const OrdersAdminPage: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+              </div>
 
               <div style={{ textAlign: 'right', marginTop: '0.75rem', fontSize: '0.875rem' }}>
                 <div>Subtotal: {currencySymbol} {selectedOrder.subTotal.toFixed(2)}</div>

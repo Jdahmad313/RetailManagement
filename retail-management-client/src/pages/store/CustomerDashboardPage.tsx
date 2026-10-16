@@ -244,7 +244,7 @@ export const CustomerDashboardPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.25rem' }}>
                 <div>
                   <h2 style={{ fontSize: '1.375rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>
-                    {businessProfile?.businessName || 'Apex Retail Store'}
+                    {businessProfile?.businessName || 'Mukhtar Bashir Merchant Karyana Store'}
                   </h2>
                   <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '3px 0' }}>{businessProfile?.address}</p>
                   <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0' }}>📞 {businessProfile?.phone} • ✉ {businessProfile?.email}</p>
@@ -318,7 +318,7 @@ export const CustomerDashboardPage: React.FC = () => {
 
               {/* Footer Note */}
               <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: '#64748b', borderTop: '1px dashed #cbd5e1', paddingTop: '0.75rem' }}>
-                Thank you for choosing {businessProfile?.businessName || 'Apex Retail Store'}! If you have any inquiries, please contact our support team.
+                Thank you for choosing {businessProfile?.businessName || 'Mukhtar Bashir Merchant Karyana Store'}! If you have any inquiries, please contact our support team.
               </div>
             </div>
 

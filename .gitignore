@@ -35,6 +35,8 @@ build/
 **/build/
 .vite/
 **/.vite/
+*.tsbuildinfo
+**/*.tsbuildinfo
 
 # Logs & Package Manager Artifacts
 npm-debug.log*

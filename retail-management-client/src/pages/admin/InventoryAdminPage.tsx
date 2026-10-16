@@ -135,8 +135,8 @@ export const InventoryAdminPage: React.FC = () => {
 
       {/* Movements Audit Table */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '0.875rem 1.25rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ position: 'relative', width: 300 }}>
+        <div style={{ padding: '0.875rem 1.25rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: 320 }}>
             <input
               type="text"
               placeholder="Search by product, SKU, reference..."
@@ -149,63 +149,65 @@ export const InventoryAdminPage: React.FC = () => {
           <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Showing latest stock ledger events</span>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
-          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-            <tr>
-              <th style={{ padding: '0.75rem 1.25rem' }}>Date & Time</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Product</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Type</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Change</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Before → After</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Reference / Reason</th>
-              <th style={{ padding: '0.75rem 1.25rem' }}>User</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>Loading movements...</td></tr>
-            ) : movements.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>No movement records found.</td></tr>
-            ) : (
-              movements.map((m) => {
-                const badge = getMovementTypeLabel(m.movementType);
-                return (
-                  <tr key={m.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '0.75rem 1.25rem', color: '#64748b' }}>
-                      {new Date(m.createdAtUtc).toLocaleString()}
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ fontWeight: 600, color: '#0f172a' }}>{m.productName}</div>
-                      <div style={{ fontSize: '0.6875rem', color: '#94a3b8', fontFamily: 'monospace' }}>SKU: {m.sku}</div>
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <span className={`badge ${badge.color}`}>{badge.label}</span>
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: m.quantityChange > 0 ? '#16a34a' : '#dc2626' }}>
-                      {m.quantityChange > 0 ? `+${m.quantityChange}` : m.quantityChange}
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: '#475569' }}>
-                      {m.quantityBefore} → {m.quantityAfter}
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      {m.referenceId && <div style={{ fontWeight: 600, fontSize: '0.75rem' }}>Ref: {m.referenceId}</div>}
-                      <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>{m.reason || 'None'}</div>
-                    </td>
-                    <td style={{ padding: '0.75rem 1.25rem', color: '#64748b' }}>
-                      {m.performedByUserName || 'System'}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+        <div className="admin-table-container">
+          <table style={{ width: '100%', minWidth: 780, borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
+            <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+              <tr>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Date & Time</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Product</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Type</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Change</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Before → After</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Reference / Reason</th>
+                <th style={{ padding: '0.75rem 1.25rem' }}>User</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>Loading movements...</td></tr>
+              ) : movements.length === 0 ? (
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>No movement records found.</td></tr>
+              ) : (
+                movements.map((m) => {
+                  const badge = getMovementTypeLabel(m.movementType);
+                  return (
+                    <tr key={m.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '0.75rem 1.25rem', color: '#64748b' }}>
+                        {new Date(m.createdAtUtc).toLocaleString()}
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <div style={{ fontWeight: 600, color: '#0f172a' }}>{m.productName}</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#94a3b8', fontFamily: 'monospace' }}>SKU: {m.sku}</div>
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <span className={`badge ${badge.color}`}>{badge.label}</span>
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: m.quantityChange > 0 ? '#16a34a' : '#dc2626' }}>
+                        {m.quantityChange > 0 ? `+${m.quantityChange}` : m.quantityChange}
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: '#475569' }}>
+                        {m.quantityBefore} → {m.quantityAfter}
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        {m.referenceId && <div style={{ fontWeight: 600, fontSize: '0.75rem' }}>Ref: {m.referenceId}</div>}
+                        <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>{m.reason || 'None'}</div>
+                      </td>
+                      <td style={{ padding: '0.75rem 1.25rem', color: '#64748b' }}>
+                        {m.performedByUserName || 'System'}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Adjust Stock Modal */}
       {showAdjustModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
-          <div className="card" style={{ width: '100%', maxWidth: 480, padding: '1.75rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Manual Stock Adjustment</h3>
               <button onClick={() => setShowAdjustModal(false)}><X size={18} /></button>

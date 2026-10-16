@@ -257,3 +257,37 @@ input, select, textarea {
   }
 }
 
+/* Responsive Admin Table Container & Sticky Action Columns */
+.admin-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sticky-action-col {
+  position: sticky !important;
+  right: 0 !important;
+  background-color: #ffffff !important;
+  z-index: 4;
+  box-shadow: -3px 0 6px -1px rgba(0, 0, 0, 0.08) !important;
+}
+
+.sticky-action-header {
+  position: sticky !important;
+  right: 0 !important;
+  background-color: #f8fafc !important;
+  z-index: 5;
+  box-shadow: -3px 0 6px -1px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Modal Responsiveness */
+@media (max-width: 640px) {
+  .responsive-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .responsive-stat-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+

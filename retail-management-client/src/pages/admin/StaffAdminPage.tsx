@@ -96,61 +96,63 @@ export const StaffAdminPage: React.FC = () => {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-              <th style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#475569' }}>Staff Member</th>
-              <th style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#475569' }}>Email</th>
-              <th style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#475569' }}>Phone</th>
-              <th style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#475569' }}>Assigned Role</th>
-              <th style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#475569', textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-                  Loading staff accounts...
-                </td>
+        <div className="admin-table-container">
+          <table style={{ width: '100%', minWidth: 650, borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#475569' }}>Staff Member</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#475569' }}>Email</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#475569' }}>Phone</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#475569' }}>Assigned Role</th>
+                <th className="sticky-action-header" style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#475569', textAlign: 'right' }}>Actions</th>
               </tr>
-            ) : cashiers.length === 0 ? (
-              <tr>
-                <td colSpan={5} style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b' }}>
-                  No dedicated cashiers found. Click "Create & Invite Cashier" to add in-store store staff.
-                </td>
-              </tr>
-            ) : (
-              cashiers.map((c) => (
-                <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '9999px', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-                        {c.fullName.charAt(0)}
-                      </div>
-                      <span>{c.fullName}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>{c.email}</td>
-                  <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{c.phoneNumber || '—'}</td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <span className="badge badge-info" style={{ gap: '0.25rem' }}>
-                      <Shield size={12} /> Cashier
-                    </span>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                    <button
-                      onClick={() => handleDelete(c.id, c.fullName)}
-                      style={{ color: '#ef4444', padding: '0.35rem', borderRadius: '0.25rem' }}
-                      title="Revoke access"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                    Loading staff accounts...
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : cashiers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b' }}>
+                    No dedicated cashiers found. Click "Create & Invite Cashier" to add in-store store staff.
+                  </td>
+                </tr>
+              ) : (
+                cashiers.map((c) => (
+                  <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '9999px', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+                          {c.fullName.charAt(0)}
+                        </div>
+                        <span>{c.fullName}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>{c.email}</td>
+                    <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{c.phoneNumber || '—'}</td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <span className="badge badge-info" style={{ gap: '0.25rem' }}>
+                        <Shield size={12} /> Cashier
+                      </span>
+                    </td>
+                    <td className="sticky-action-col" style={{ padding: '0.75rem 1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button
+                        onClick={() => handleDelete(c.id, c.fullName)}
+                        style={{ color: '#ef4444', padding: '0.35rem', borderRadius: '0.25rem' }}
+                        title="Revoke access"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Invite Modal */}
@@ -166,7 +168,7 @@ export const StaffAdminPage: React.FC = () => {
           padding: '1rem',
           backdropFilter: 'blur(3px)',
         }}>
-          <div className="card" style={{ width: '100%', maxWidth: 480, padding: '1.75rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem', margin: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
               <div style={{ width: 40, height: 40, borderRadius: '0.5rem', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <UserPlus size={20} />

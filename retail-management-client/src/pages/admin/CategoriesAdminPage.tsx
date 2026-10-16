@@ -109,64 +109,66 @@ export const CategoriesAdminPage: React.FC = () => {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
-          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-            <tr>
-              <th style={{ padding: '0.75rem 1.25rem' }}>Category</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Slug</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Display Order</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Products Count</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-              <th style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>Loading categories...</td></tr>
-            ) : categories.length === 0 ? (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>No categories registered yet.</td></tr>
-            ) : (
-              categories.map((c) => (
-                <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <img
-                      src={c.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=80'}
-                      alt={c.name}
-                      style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: '0.25rem', border: '1px solid #e2e8f0' }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: 600, color: '#0f172a' }}>{c.name}</div>
-                      <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>{c.description || 'No description'}</div>
-                    </div>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: '#64748b' }}>{c.slug}</td>
-                  <td style={{ padding: '0.75rem 1rem' }}>{c.displayOrder}</td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <span className="badge badge-info">{c.productCount} Items</span>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <span className={`badge ${c.isActive ? 'badge-success' : 'badge-danger'}`}>
-                      {c.isActive ? 'Active' : 'Hidden'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>
-                    <button onClick={() => openEditModal(c)} style={{ color: '#2563eb', marginRight: '0.75rem' }} title="Edit">
-                      <Edit2 size={16} />
-                    </button>
-                    <button onClick={() => handleDelete(c.id)} style={{ color: '#ef4444' }} title="Delete">
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <div className="admin-table-container">
+          <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
+            <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+              <tr>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Category</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Slug</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Display Order</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Products Count</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                <th className="sticky-action-header" style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>Loading categories...</td></tr>
+              ) : categories.length === 0 ? (
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>No categories registered yet.</td></tr>
+              ) : (
+                categories.map((c) => (
+                  <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <img
+                        src={c.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=80'}
+                        alt={c.name}
+                        style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: '0.25rem', border: '1px solid #e2e8f0' }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 600, color: '#0f172a' }}>{c.name}</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#64748b' }}>{c.description || 'No description'}</div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: '#64748b' }}>{c.slug}</td>
+                    <td style={{ padding: '0.75rem 1rem' }}>{c.displayOrder}</td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <span className="badge badge-info">{c.productCount} Items</span>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <span className={`badge ${c.isActive ? 'badge-success' : 'badge-danger'}`}>
+                        {c.isActive ? 'Active' : 'Hidden'}
+                      </span>
+                    </td>
+                    <td className="sticky-action-col" style={{ padding: '0.75rem 1.25rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button onClick={() => openEditModal(c)} style={{ color: '#2563eb', marginRight: '0.75rem', padding: '0.25rem' }} title="Edit">
+                        <Edit2 size={16} />
+                      </button>
+                      <button onClick={() => handleDelete(c.id)} style={{ color: '#ef4444', padding: '0.25rem' }} title="Delete">
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
-          <div className="card" style={{ width: '100%', maxWidth: 480, padding: '1.75rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
                 {editingCategory ? 'Edit Category' : 'Create Category'}

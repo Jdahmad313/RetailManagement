@@ -18,8 +18,8 @@ export const CatalogPage: React.FC = () => {
   const minPrice = searchParams.get('minPrice') || '';
   const maxPrice = searchParams.get('maxPrice') || '';
   const inStockOnly = searchParams.get('inStock') === 'true';
-  const sortBy = searchParams.get('sortBy') || '';
-  const sortDir = searchParams.get('sortDir') || 'asc';
+  const sortBy = searchParams.get('sortBy') || 'created';
+  const sortDir = searchParams.get('sortDir') || 'desc';
   const page = parseInt(searchParams.get('page') || '1', 10);
 
   const { addToCart } = useCart();
@@ -69,6 +69,25 @@ export const CatalogPage: React.FC = () => {
     } else {
       next.delete(key);
     }
+    if (key !== 'page') {
+      next.set('page', '1');
+    }
+    setSearchParams(next);
+  };
+
+  const handleSortChange = (combinedVal: string) => {
+    const [sb, sd] = combinedVal.split('-');
+    const next = new URLSearchParams(searchParams);
+    if (sb) {
+      next.set('sortBy', sb);
+    } else {
+      next.delete('sortBy');
+    }
+    if (sd) {
+      next.set('sortDir', sd);
+    } else {
+      next.delete('sortDir');
+    }
     next.set('page', '1');
     setSearchParams(next);
   };
@@ -79,7 +98,7 @@ export const CatalogPage: React.FC = () => {
 
   return (
     <div className="container" style={{ padding: '2rem 1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a' }}>Product Catalog</h1>
           <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
@@ -92,23 +111,22 @@ export const CatalogPage: React.FC = () => {
           <span style={{ fontSize: '0.875rem', color: '#64748b' }}>Sort:</span>
           <select
             value={`${sortBy}-${sortDir}`}
-            onChange={(e) => {
-              const [sb, sd] = e.target.value.split('-');
-              updateParam('sortBy', sb || null);
-              updateParam('sortDir', sd || null);
-            }}
+            onChange={(e) => handleSortChange(e.target.value)}
             style={{
               padding: '0.5rem 0.75rem',
               borderRadius: '0.375rem',
               border: '1px solid #cbd5e1',
               backgroundColor: '#ffffff',
               fontSize: '0.875rem',
+              cursor: 'pointer',
             }}
           >
-            <option value="-asc">Newest First</option>
+            <option value="created-desc">Newest First</option>
+            <option value="created-asc">Oldest First</option>
             <option value="price-asc">Price: Low to High</option>
             <option value="price-desc">Price: High to Low</option>
             <option value="name-asc">Alphabetical (A - Z)</option>
+            <option value="name-desc">Alphabetical (Z - A)</option>
           </select>
         </div>
       </div>

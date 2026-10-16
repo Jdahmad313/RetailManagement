@@ -43,7 +43,7 @@ public class EmailService : IEmailService
             ?? "sufisheeen@gmail.com";
         var senderName = _configuration["EmailSettings:SenderName"] 
             ?? Environment.GetEnvironmentVariable("EmailSettings__SenderName")
-            ?? "Apex Retail Store";
+            ?? "Mukhtar Bashir Merchant Karyana Store";
         var username = _configuration["EmailSettings:Username"] 
             ?? Environment.GetEnvironmentVariable("EmailSettings__Username")
             ?? "bdf3b2001@smtp-brevo.com";
@@ -284,7 +284,7 @@ public class EmailService : IEmailService
 
     public async Task<bool> SendOtpEmailAsync(string toEmail, string customerName, string otpCode, CancellationToken ct = default)
     {
-        var subject = $"Your Apex Retail Verification Code: {otpCode}";
+        var subject = $"Your Verification Code: {otpCode} - Mukhtar Bashir Merchant Karyana Store";
         var html = $@"
 <!DOCTYPE html>
 <html>
@@ -292,7 +292,8 @@ public class EmailService : IEmailService
 <body style='font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px;'>
   <div style='max-width: 540px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; padding: 32px;'>
     <div style='text-align: center; margin-bottom: 24px;'>
-      <div style='display: inline-block; background: #2563eb; color: #ffffff; font-weight: bold; font-size: 20px; border-radius: 8px; padding: 8px 16px;'>Apex Retail</div>
+      <div style='display: inline-block; background: #2563eb; color: #ffffff; font-weight: bold; font-size: 18px; border-radius: 8px; padding: 8px 16px;'>Mukhtar Bashir Merchant Karyana</div>
+      <div style='font-size: 12px; color: #64748b; margin-top: 4px;'>Jurian, Hafizabad</div>
     </div>
     <h2 style='color: #0f172a; font-size: 20px; margin-top: 0;'>Verify Your Account</h2>
     <p style='color: #475569; font-size: 15px; line-height: 1.5;'>Hello <strong>{customerName}</strong>,</p>
@@ -302,11 +303,39 @@ public class EmailService : IEmailService
     </div>
     <p style='color: #64748b; font-size: 13px; line-height: 1.5;'>⏱️ This code is valid for <strong>5 minutes</strong>. If you did not request this, please ignore this email.</p>
     <hr style='border: none; border-top: 1px solid #f1f5f9; margin: 24px 0;' />
-    <p style='color: #94a3b8; font-size: 12px; text-align: center;'>Apex Retail Multi-channel Management System &copy; {DateTime.UtcNow.Year}</p>
+    <p style='color: #94a3b8; font-size: 12px; text-align: center;'>Mukhtar Bashir Merchant Karyana Store &copy; {DateTime.UtcNow.Year} • Jurian, Hafizabad</p>
   </div>
 </body>
 </html>";
         return await SendEmailAsync(toEmail, customerName, subject, html, ct);
+    }
+
+    public async Task<bool> SendPasswordResetOtpEmailAsync(string toEmail, string userName, string otpCode, CancellationToken ct = default)
+    {
+        var subject = $"Password Reset Code: {otpCode} - Mukhtar Bashir Merchant Karyana Store";
+        var html = $@"
+<!DOCTYPE html>
+<html>
+<head><meta charset='utf-8'></head>
+<body style='font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px;'>
+  <div style='max-width: 540px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; padding: 32px;'>
+    <div style='text-align: center; margin-bottom: 24px;'>
+      <div style='display: inline-block; background: #2563eb; color: #ffffff; font-weight: bold; font-size: 18px; border-radius: 8px; padding: 8px 16px;'>Mukhtar Bashir Merchant Karyana</div>
+      <div style='font-size: 12px; color: #64748b; margin-top: 4px;'>Jurian, Hafizabad</div>
+    </div>
+    <h2 style='color: #0f172a; font-size: 20px; margin-top: 0;'>Reset Your Password</h2>
+    <p style='color: #475569; font-size: 15px; line-height: 1.5;'>Hello <strong>{userName}</strong>,</p>
+    <p style='color: #475569; font-size: 15px; line-height: 1.5;'>We received a request to reset your password. Please use the following 6-digit one-time password (OTP) to set up your new password:</p>
+    <div style='background: #eff6ff; border: 2px dashed #3b82f6; border-radius: 8px; text-align: center; padding: 18px; margin: 24px 0;'>
+      <span style='font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #1d4ed8;'>{otpCode}</span>
+    </div>
+    <p style='color: #64748b; font-size: 13px; line-height: 1.5;'>⏱️ This code is valid for <strong>5 minutes</strong>. If you did not request a password reset, please secure your account immediately or ignore this message.</p>
+    <hr style='border: none; border-top: 1px solid #f1f5f9; margin: 24px 0;' />
+    <p style='color: #94a3b8; font-size: 12px; text-align: center;'>Mukhtar Bashir Merchant Karyana Store &copy; {DateTime.UtcNow.Year} • Jurian, Hafizabad</p>
+  </div>
+</body>
+</html>";
+        return await SendEmailAsync(toEmail, userName, subject, html, ct);
     }
 
     public async Task<bool> SendOrderInvoiceAsync(OrderDto order, BusinessProfile profile, CancellationToken ct = default)

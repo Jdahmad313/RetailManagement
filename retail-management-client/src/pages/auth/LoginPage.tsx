@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, Store, AlertCircle, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useBusiness } from '../../context/BusinessContext';
 
 export const LoginPage: React.FC = () => {
+  const { profile } = useBusiness();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -42,8 +44,8 @@ export const LoginPage: React.FC = () => {
           <div style={{ width: 48, height: 48, borderRadius: '0.5rem', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem' }}>
             <Lock size={24} />
           </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>Sign In to Apex</h2>
-          <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>Access the management portal or your customer profile</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>Sign In</h2>
+          <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>{profile?.businessName || 'Mukhtar Bashir Merchant Karyana Store'}</p>
         </div>
 
         {errorMsg && (
@@ -69,7 +71,12 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Password</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700 }}>Password</label>
+              <Link to="/forgot-password" style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 600 }}>
+                Forgot Password?
+              </Link>
+            </div>
             <div style={{ position: 'relative' }}>
               <input
                 type={showPassword ? 'text' : 'password'}

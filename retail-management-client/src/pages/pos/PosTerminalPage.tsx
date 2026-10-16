@@ -830,7 +830,7 @@ ${businessProfile?.receiptFooter || 'Shukriya! Tashreef awri ka bohot shukriya.'
             {/* Receipt Preview */}
             <div id="printable-receipt" style={{ fontFamily: 'monospace', fontSize: '0.8125rem', lineHeight: 1.4, border: '1px dashed #cbd5e1', padding: '1rem', backgroundColor: '#ffffff', color: '#000000' }}>
               <div style={{ textAlign: 'center', marginBottom: '0.75rem' }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 800 }}>{businessProfile?.businessName || 'Apex Retail'}</h3>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 800 }}>{businessProfile?.businessName || 'Mukhtar Bashir Merchant Karyana Store'}</h3>
                 <div>{businessProfile?.address}</div>
                 <div>{businessProfile?.phone}</div>
                 <div>{businessProfile?.receiptHeader}</div>

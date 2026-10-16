@@ -289,6 +289,96 @@ public class AuthService : IAuthService
         return true;
     }
 
+    public async Task<string> InitiateForgotPasswordOtpAsync(ForgotPasswordInitiateDto dto, CancellationToken ct = default)
+    {
+        var email = (dto.Email ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new BadRequestException("Please enter your registered email address.");
+        }
+
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            throw new NotFoundException("No account found with this email address.");
+        }
+
+        if (!user.IsActive)
+        {
+            throw new BadRequestException("This account is currently deactivated. Please contact store administration.");
+        }
+
+        var payloadJson = JsonSerializer.Serialize(new { Email = user.Email, FullName = user.FullName });
+        await _otpService.InitiateOtpAsync(email, user.FullName ?? "Customer", "PasswordReset", payloadJson, ct);
+        return email;
+    }
+
+    public async Task<bool> ResetPasswordWithOtpAsync(ResetPasswordWithOtpDto dto, CancellationToken ct = default)
+    {
+        var email = (dto.Email ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new BadRequestException("Please provide your email address.");
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 6)
+        {
+            throw new BadRequestException("New password must be at least 6 characters long.");
+        }
+        if (!dto.NewPassword.Any(char.IsUpper))
+        {
+            throw new BadRequestException("Password must contain at least one uppercase letter ('A'-'Z').");
+        }
+        if (!dto.NewPassword.Any(char.IsLower))
+        {
+            throw new BadRequestException("Password must contain at least one lowercase letter ('a'-'z').");
+        }
+        if (!dto.NewPassword.Any(char.IsDigit))
+        {
+            throw new BadRequestException("Password must contain at least one numeric digit ('0'-'9').");
+        }
+
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            throw new NotFoundException("No account found with this email address.");
+        }
+
+        // 1. Verify and consume the OTP token
+        await _otpService.VerifyOtpAsync(email, dto.OtpCode, "PasswordReset", ct);
+
+        // 2. Perform ASP.NET Identity reset
+        var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var resetResult = await _userManager.ResetPasswordAsync(user, resetToken, dto.NewPassword);
+        if (!resetResult.Succeeded)
+        {
+            var errors = string.Join("; ", resetResult.Errors.Select(e => e.Description));
+            throw new BadRequestException($"Password reset failed: {errors}");
+        }
+
+        // 3. Invalidate past refresh tokens for security
+        var oldTokens = await _dbContext.UserRefreshTokens.Where(t => t.UserId == user.Id).ToListAsync(ct);
+        if (oldTokens.Any())
+        {
+            _dbContext.UserRefreshTokens.RemoveRange(oldTokens);
+            await _dbContext.SaveChangesAsync(ct);
+        }
+
+        return true;
+    }
+
+    public async Task<bool> ResendForgotPasswordOtpAsync(ForgotPasswordInitiateDto dto, CancellationToken ct = default)
+    {
+        var email = (dto.Email ?? string.Empty).Trim().ToLowerInvariant();
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            throw new NotFoundException("No account found with this email address.");
+        }
+
+        return await _otpService.ResendOtpAsync(email, user.FullName ?? "Customer", "PasswordReset", ct);
+    }
+
     public async Task<TokenResponseDto> LoginAsync(LoginDto dto, CancellationToken ct = default)
     {
         var user = await _userManager.FindByEmailAsync(dto.Email);
